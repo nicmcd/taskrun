@@ -3,7 +3,8 @@ import os
 import subprocess
 import threading
 import time
-
+import sys
+from termcolor import colored
 
 ###############################################################################
 # This defines one task
@@ -68,10 +69,10 @@ class Task(threading.Thread):
             command = command_set[0]
             output  = command_set[1]
             if self._show:
+                text = "[" + self._name + "]: " + command
                 if output:
-                    print("[" + self._name + "]: " + command + " &> " + str(output))
-                else:
-                    print("[" + self._name + "]: " + command)
+                    text += " &> " + str(output)
+                print(text)
             if self._run:
                 if output is not None:
                     ofd = open(output, 'w')
@@ -82,7 +83,8 @@ class Task(threading.Thread):
                 if output is not None:
                     ofd.close()
                 if proc.returncode != 0:
-                    print("[" + self._name + "] ERROR: " + command)
+                    text = "[" + self._name + "] ERROR: " + command
+                    print(text)
                     os._exit(-1)
         self._countLock.decrement()
         self.__setStatus(self.Status.DONE)
@@ -117,18 +119,9 @@ class Manager():
         remaining_tasks = len(self._tasks)
         while remaining_tasks > 0:
 
-            # print the progress
-            if progress:
-                proc_num = total_tasks - remaining_tasks
-                percent = (proc_num / total_tasks) * 100.00
-                print("%(percent).0f%% (%(proc_num)d of %(total_tasks)d)" % {\
-                        'percent' : round(percent, 0), \
-                            'proc_num' : proc_num, \
-                            'total_tasks' : total_tasks })
-
             # wait for an available process slot
             while self._countLock.count() >= self._num_procs:
-                time.sleep(1)
+                time.sleep(.01)
 
             # search the tasks for a ready task
             found_task = False
@@ -149,13 +142,17 @@ class Manager():
             # decrement the remaining tasks count
             remaining_tasks -= 1
 
-        if progress:
-            proc_num = total_tasks - remaining_tasks
-            percent = (proc_num / total_tasks) * 100.00
-            print("%(percent).0f%% (%(proc_num)d of %(total_tasks)d)" % {\
+            # print the progress
+            if progress:
+                proc_num = total_tasks - remaining_tasks
+                percent = (proc_num / total_tasks) * 100.00
+                text = "%(percent).0f%% (%(proc_num)d of %(total_tasks)d)" % {\
                     'percent' : round(percent, 0), \
                         'proc_num' : proc_num, \
-                        'total_tasks' : total_tasks })
+                        'total_tasks' : total_tasks }
+                if sys.stdout.isatty():
+                    text = colored(text, 'green')
+                print(text)
 
 
 ###############################################################################
