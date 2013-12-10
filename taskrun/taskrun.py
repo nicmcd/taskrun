@@ -68,7 +68,10 @@ class Task(threading.Thread):
             command = command_set[0]
             output  = command_set[1]
             if self._show:
-                print("[" + self._name + "]: " + command + " => " + str(output))
+                if output:
+                    print("[" + self._name + "]: " + command + " &> " + str(output))
+                else:
+                    print("[" + self._name + "]: " + command)
             if self._run:
                 if output is not None:
                     ofd = open(output, 'w')
@@ -99,7 +102,9 @@ class Manager():
         task.setLock(self._countLock)
         self._tasks.append(task)
 
-    def runTasks(self, show=False, run=True):
+    def runTasks(self, show=False, run=True, progress=True):
+
+        total_tasks = len(self._tasks)
 
         if show:
             for task in self._tasks:
@@ -111,6 +116,15 @@ class Manager():
 
         remaining_tasks = len(self._tasks)
         while remaining_tasks > 0:
+
+            # print the progress
+            if progress:
+                proc_num = total_tasks - remaining_tasks
+                percent = (proc_num / total_tasks) * 100.00
+                print("%(percent).0f%% (%(proc_num)d of %(total_tasks)d)" % {\
+                        'percent' : round(percent, 0), \
+                            'proc_num' : proc_num, \
+                            'total_tasks' : total_tasks })
 
             # wait for an available process slot
             while self._countLock.count() >= self._num_procs:
@@ -134,6 +148,14 @@ class Manager():
 
             # decrement the remaining tasks count
             remaining_tasks -= 1
+
+        if progress:
+            proc_num = total_tasks - remaining_tasks
+            percent = (proc_num / total_tasks) * 100.00
+            print("%(percent).0f%% (%(proc_num)d of %(total_tasks)d)" % {\
+                    'percent' : round(percent, 0), \
+                        'proc_num' : proc_num, \
+                        'total_tasks' : total_tasks })
 
 
 ###############################################################################
