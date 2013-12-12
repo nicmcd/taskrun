@@ -1,5 +1,15 @@
+#!/usr/bin/env python
+
 import random
-from taskrun import *
+import sys
+
+try:
+    import taskrun
+except:
+    print("'taskrun' doesn't appear to be installed. Did you install it?")
+    print("You can install it locally by running:")
+    print("python setup.py install --user")
+    sys.exit(-1)
 
 manager = taskrun.Task.Manager(numProcs=20, showCommands=True, runTasks=True, showProgress=True)
 
