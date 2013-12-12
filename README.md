@@ -8,5 +8,7 @@ however, if you want colored output, termcolor needs to be installed. To install
 run the following commands:
 
 ~> wget https://pypi.python.org/packages/source/t/termcolor/termcolor-1.1.0.tar.gz
+
 ~> tar zxvf termcolor-1.1.0.tar.gz
+
 ~> sudo ./setup.py install
