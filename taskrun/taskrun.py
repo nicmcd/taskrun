@@ -1,181 +1,267 @@
+from __future__ import print_function # backwards print compatibility
 import multiprocessing
 import os
 import subprocess
 import threading
 import time
 import sys
-from termcolor import colored
 
-###############################################################################
-# This defines one task
-###############################################################################
+# conditionally import the termcolor package, it's OK if it doesn't exist
+try:
+    USE_TERM_COLOR = True
+    from termcolor import colored
+except ImportError:
+    USE_TERM_COLOR = False
+USE_TERM_COLOR &= sys.stdout.isatty()
+
+
+"""
+This defines one task to be executed
+Each task has a set of dependencies, which are other tasks
+Each task notifies all tasks that are dependent on it upon completion
+"""
 class Task(threading.Thread):
 
-    class Status:
-        WAITING = "waiting"
-        READY = "ready"
-        RUNNING = "running"
-        DONE = "done"
-
-    def __init__(self, name):
+    """
+    Tasks should not be directly instantiated. The user should use the manager.task_new() function
+    """
+    def __init__(self, manager, name, command, output=None):
         threading.Thread.__init__(self)
+        self._manager = manager
         self._name = name
-        self._countLock = None
-        self._commands = []
+        self._command = command
+        self._output = output
         self._dependencies = []
-        self._status = self.Status.READY
-        self._statusLock = threading.Lock()
-        self._show = False
+        self._notifiees = []
         self._run = True
+        self._accessLock = threading.Lock()
 
     def name(self):
-        return self._name;
+        return self._name
 
-    def addCommand(self, command, output=None):
-        self._commands.append((command, output))
+    def command(self):
+        return self._command
 
-    def addDependency(self, runner):
-        self._dependencies.append(runner)
+    def output(self):
+        return self._output
 
-    def setLock(self, countLock):
-        self._countLock = countLock
+    """
+    This function must be called BEFORE Manager.run_request_is() is called
+    """
+    def dependency_is(self, task):
+        self._dependencies.append(task)
+        task.__notifiee_is(self)
 
-    def setShow(self, show):
-        self._show = show
+    def __notifiee_is(self, notifiee):
+        self._notifiees.append(notifiee)
 
-    def setRun(self, run):
+    def _run_is(self, run):
         self._run = run
 
-    def __setStatus(self, status):
-        self._statusLock.acquire(True)
-        self._status = status
-        self._statusLock.release()
+    """
+    This function is only called by the Manager
+    """
+    def _ready_request_is(self):
+        if not self._dependencies: # test for empty
+            self._manager._ready_task_is(self)
 
-    def getStatus(self):
-        self._statusLock.acquire(True)
-        status = self._status
-        self._statusLock.release()
-        if status == self.Status.DONE or status == self.Status.RUNNING:
-            return status
-        else:
-            for task in self._dependencies:
-                if task.getStatus() != self.Status.DONE:
-                    return self.Status.WAITING
-            return self.Status.READY
+    """
+    This function is called by dependent tasks when they complete
+    """
+    def _done_task_is(self, task):
+        self._dependencies.remove(task)
+        if not self._dependencies: # test for empty
+            self._manager._ready_task_is(self)
 
+    """
+    This function is called by the threading library after the class's 'Start' function is called
+    """
     def run(self):
-        self.__setStatus(self.Status.RUNNING)
-        for command_set in self._commands:
-            command = command_set[0]
-            output  = command_set[1]
-            if self._show:
-                text = "[" + self._name + "]: " + command
-                if output:
-                    text += " &> " + str(output)
-                print(text)
-            if self._run:
-                if output is not None:
-                    ofd = open(output, 'w')
-                    proc = subprocess.Popen(command, stdout=ofd, stderr=ofd, shell=True)
-                else:
-                    proc = subprocess.Popen(command, shell=True)
-                proc.wait()
-                if output is not None:
-                    ofd.close()
-                if proc.returncode != 0:
-                    text = "[" + self._name + "] ERROR: " + command
-                    print(text)
-                    os._exit(-1)
-        self._countLock.decrement()
-        self.__setStatus(self.Status.DONE)
+
+        # inform the manager that this task is now running
+        self._manager._running_task_is(self)
+
+        # run the command (optionally)
+        if self._run:
+
+            # execute the task command
+            if self._output is not None:
+                ofd = open(self._output, 'w')
+                proc = subprocess.Popen(self._command, stdout=ofd, stderr=ofd, shell=True)
+            else:
+                proc = subprocess.Popen(self._command, shell=True)
+
+            # wait for the process to finish
+            proc.wait()
+
+            # close the output
+            if self._output is not None:
+                ofd.close()
+
+            # check the return code
+            ret = proc.returncode
+            if ret != 0:
+                self._manager._errored_task_is(self, ret)
+
+        # inform the manager of task completion
+        self._manager._done_task_is(self)
+
+        # inform all notifiees of task completion
+        for notifiee in self._notifiees:
+            notifiee._done_task_is(self)
 
 
-###############################################################################
-# This manages many Tasks
-###############################################################################
-class Manager():
+    """
+    This nested class manages a group of tasks
+    """
+    class Manager():
 
-    def __init__(self, num_procs=multiprocessing.cpu_count()):
-        self._num_procs = num_procs
-        self._countLock = CountLock()
-        self._tasks = []
+        def __init__(self, numProcs=None, showCommands=True, runTasks=True, showProgress=True):
+            self._numProcs = numProcs
+            if not numProcs:
+                self._numProcs = multiprocessing.cpu_count()
+            self._printLock = threading.Lock()
+            self._tasks = []
+            self._readyTasks = []
+            self._runningTasks = []
+            self._printLock = threading.Lock()
+            self._showCommands = showCommands
+            self._runTasks = runTasks
+            self._showProgress = showProgress
 
-    def addTask(self, task):
-        task.setLock(self._countLock)
-        self._tasks.append(task)
+        """
+        This is the effective constructor for a task
+        It also adds the task to this manager instance
+        """
+        def task_new(self, name, command, output=None):
+            task = Task(self, name, command, output)
+            self._tasks.append(task)
+            return task
 
-    def runTasks(self, show=False, run=True, progress=True):
+        """
+        This is called by a Task when it becomes ready to run
+        """
+        def _ready_task_is(self, task):
+            self._readyTasks.append(task)
 
-        total_tasks = len(self._tasks)
+        """
+        This is called by a Task when it has completed execution
+        This is only called by tasks that are listed as dependencies
+        """
+        def _done_task_is(self, task):
+            self._tasks.remove(task)
+            self._runningTasks.remove(task)
 
-        if show:
+        """
+        This runs all tasks in dependency order without running more than 'numProcs'
+        processes at one time
+        """
+        def run_request_is(self):
+
+            # ignore empty call
+            if not self._tasks: # not empty check
+                return
+
+            # set task settings
             for task in self._tasks:
-                task.setShow(True)
 
-        if not run:
-            for task in self._tasks:
-                task.setRun(False)
+                # tell the tasks to actually run their command (optionally)
+                task._run_is(self._runTasks)
 
-        remaining_tasks = len(self._tasks)
-        while remaining_tasks > 0:
+                # ask the tasks to report if they are already to run (root tasks)
+                task._ready_request_is()
 
-            # wait for an available process slot
-            while self._countLock.count() >= self._num_procs:
-                time.sleep(.01)
+            # pre-compute some number for statistics
+            totalTasks = len(self._tasks)
 
-            # search the tasks for a ready task
-            found_task = False
-            while not found_task:
+            # run all tasks until there is none left
+            while self._tasks: # not empty check
 
-                # search the task list to find a ready task
-                for task in self._tasks:
-                    if task.getStatus() == Task.Status.READY:
-                        self._countLock.increment()
-                        task.start()
-                        found_task = True
-                        break
+                # wait for an available task to run
+                if not self._readyTasks:
+                    time.sleep(.1)
+                    continue
 
-                # if no tasks were ready, sleep then search again
-                if not found_task:
-                    time.sleep(1)
+                # wait for an available process slot
+                while len(self._runningTasks) >= self._numProcs:
+                    time.sleep(.1)
 
-            # decrement the remaining tasks count
-            remaining_tasks -= 1
+                # get the next ready task
+                task = self._readyTasks[0]
+                self._readyTasks.remove(task)
+                self._runningTasks.append(task)
 
-            # print the progress
-            if progress:
-                proc_num = total_tasks - remaining_tasks
-                percent = (proc_num / total_tasks) * 100.00
-                text = "%(percent).0f%% (%(proc_num)d of %(total_tasks)d)" % {\
-                    'percent' : round(percent, 0), \
-                        'proc_num' : proc_num, \
-                        'total_tasks' : total_tasks }
-                if sys.stdout.isatty():
-                    text = colored(text, 'green')
-                print(text)
+                # compute the number of remaining tasks before starting next task
+                remainingTasks = len(self._tasks)
 
+                # run it
+                task.start()
 
-###############################################################################
-# This is a simple counter object that is thread safe
-###############################################################################
-class CountLock:
+                # show progress (optionally)
+                if self._showProgress:
+                    self.__print_progress(totalTasks, remainingTasks)
 
-    def __init__(self):
-        self._lock  = threading.Lock()
-        self._count = 0;
+            # show progress (optionally)
+            if self._showProgress:
+                self.__print_progress(totalTasks, len(self._tasks))
 
-    def count(self):
-        self._lock.acquire(True)
-        cnt = self._count
-        self._lock.release()
-        return cnt
+        """
+        This function is called by tasks at the beginning of their 'run' function
+        """
+        def _running_task_is(self, task):
 
-    def increment(self):
-        self._lock.acquire(True)
-        self._count += 1
-        self._lock.release()
+            # only print the command when 'showCommands' is True
+            if self._showCommands:
 
-    def decrement(self):
-        self._lock.acquire(True)
-        self._count -= 1
-        self._lock.release()
+                # format the output string
+                text = "[" + task.name() + "] " + task.command()
+                if task.output():
+                    text += " &> " + task.output()
+
+                # print
+                self.__print(text)
+
+        """
+        This function is called by a task when an error code is returned from the task
+        """
+        def _errored_task_is(self, task, code):
+
+            # format the output string
+            text = "[" + task.name() + "] ERROR: " + task.command()
+            if task.output():
+                text += " &> " + task.output()
+            text += "\nReturned " + str(code)
+            if USE_TERM_COLOR:
+                text = colored(text, 'red')
+
+            # print
+            self.__print(text)
+
+            # kill
+            os._exit(-1)
+
+        """
+        This function is called by the manager to show the progress in the output
+        """
+        def __print_progress(self, total, remaining):
+
+            # generate numbers
+            processed = total - remaining
+            percent = (processed / float(total)) * 100.00
+            percent = int(round(percent, 0))
+
+            # format the output string
+            text = "{0:d}% ({1:d} of {2:d})".format(percent, processed, total)
+            if USE_TERM_COLOR:
+                text = colored(text, 'green')
+
+            # print
+            self.__print(text)
+
+        """
+        This function is used to print a message to the output in a thread safe manner
+        """
+        def __print(self, *args, **kwargs):
+            self._printLock.acquire(True)
+            print(*args, **kwargs)
+            self._printLock.release()
