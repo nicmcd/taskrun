@@ -115,9 +115,9 @@ class Task(threading.Thread):
             # execute the task command
             if self._output is not None:
                 ofd = open(self._output, 'w')
-                proc = subprocess.Popen(self._command, stdout=ofd, stderr=ofd, shell=True)
             else:
-                proc = subprocess.Popen(self._command, shell=True)
+                ofd = open('/dev/null', 'w')
+            proc = subprocess.Popen(self._command, stdout=ofd, stderr=ofd, shell=True)
 
             # wait for the process to finish
             proc.wait()
