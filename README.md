@@ -7,7 +7,7 @@ How to:
 http://nicisdigital.wordpress.com/2013/12/13/taskrun/
 
 
-Side node:
+Side note:
 For colored output, this package uses termcolor-1.1.0. The code runs without termcolor,
 however, if you want colored output, termcolor needs to be installed. It can be found at:
 
