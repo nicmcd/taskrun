@@ -41,7 +41,7 @@ except ImportError:
 USE_TERM_COLOR &= sys.stdout.isatty()
 
 # this declares the version
-VERSION = (1, 0, 0)
+VERSION = (2, 0, 0)
 
 """
 This defines one task to be executed
@@ -51,92 +51,99 @@ Each task notifies all tasks that are dependent on it upon completion
 class Task(threading.Thread):
 
     """
-    Tasks should not be directly instantiated. The user should use the manager.task_new() function
+    Tasks should not be directly instantiated. The user should use the
+    manager.new_task() function
     """
-    def __init__(self, manager, name, command, output=None):
+    def __init__(self, manager, name, command=None, output_file=None):
         threading.Thread.__init__(self)
         self._manager = manager
         self._name = name
         self._command = command
-        self._output = output
+        self._output_file = output_file
         self._dependencies = []
         self._notifiees = []
-        self._run = True
+        self._run_cmd = True
         self._accessLock = threading.Lock()
 
-    def name(self):
+    def get_name(self):
         return self._name
 
-    def command(self):
+    def get_command(self):
         return self._command
 
-    def output(self):
-        return self._output
+    def get_output_file(self):
+        return self._output_file
 
     """
-    This function must be called BEFORE Manager.run_request_is() is called
+    These functions must be called BEFORE Manager.run_tasks() is called
     """
-    def dependency_is(self, task):
+    def add_dependency(self, task):
         self._dependencies.append(task)
-        task.__notifiee_is(self)
+        task.__add_notifiee(self)
 
-    def __notifiee_is(self, notifiee):
+    def set_command(self, command):
+        self._command = command
+
+    def set_output_file(self, output_file):
+        self._output_file
+
+    """
+    These functions are only called by the manager
+    """
+    def __add_notifiee(self, notifiee):
         self._notifiees.append(notifiee)
 
-    def _run_is(self, run):
-        self._run = run
+    def _run_command(self, run):
+        self._run_cmd = run
 
-    """
-    This function is only called by the Manager
-    """
-    def _ready_request_is(self):
+    def _ready_request(self):
         if not self._dependencies: # test for empty
-            self._manager._ready_task_is(self)
+            self._manager._ready_task(self)
 
     """
     This function is called by dependent tasks when they complete
     """
-    def _done_task_is(self, task):
+    def _notify_done(self, task):
         self._dependencies.remove(task)
         if not self._dependencies: # test for empty
-            self._manager._ready_task_is(self)
+            self._manager._ready_task(self)
 
     """
-    This function is called by the threading library after the class's 'Start' function is called
+    This function is called by the threading library after the class's 'Start'
+    function is called
     """
     def run(self):
-
         # inform the manager that this task is now running
-        self._manager._running_task_is(self)
+        self._manager._running_task(self)
+
+        # ensure the command has been set
+        if not self._command:
+            self._manager._errored_task(self, "command was never set")
 
         # run the command (optionally)
-        if self._run:
-
+        if self._run_cmd:
             # execute the task command
-            if self._output is not None:
-                ofd = open(self._output, 'w')
+            if self._output_file is not None:
+                ofd = open(self._output_file, 'w')
             else:
                 ofd = open('/dev/null', 'w')
-            proc = subprocess.Popen(self._command, stdout=ofd, stderr=ofd, shell=True)
-
+            proc = subprocess.Popen(self._command, stdout=ofd, stderr=ofd, \
+                                    shell=True)
             # wait for the process to finish
             proc.wait()
-
             # close the output
-            if self._output is not None:
+            if self._output_file is not None:
                 ofd.close()
-
             # check the return code
             ret = proc.returncode
             if ret != 0:
-                self._manager._errored_task_is(self, ret)
+                self._manager._errored_task(self, ret)
 
         # inform the manager of task completion
-        self._manager._done_task_is(self)
-
+        self._manager._notify_done(self)
         # inform all notifiees of task completion
         for notifiee in self._notifiees:
-            notifiee._done_task_is(self)
+            notifiee._notify_done(self)
 
 
     """
@@ -144,7 +151,8 @@ class Task(threading.Thread):
     """
     class Manager():
 
-        def __init__(self, numProcs=None, showCommands=True, runTasks=True, showProgress=True):
+        def __init__(self, numProcs=None, showCommands=True, runTasks=True, \
+                     showProgress=True):
             self._numProcs = numProcs
             if not numProcs:
                 self._numProcs = multiprocessing.cpu_count()
@@ -161,70 +169,62 @@ class Task(threading.Thread):
         This is the effective constructor for a task
         It also adds the task to this manager instance
         """
-        def task_new(self, name, command, output=None):
-            task = Task(self, name, command, output)
+        def new_task(self, name, command=None, output_file=None):
+            task = Task(self, name, command, output_file)
             self._tasks.append(task)
             return task
 
         """
         This is called by a Task when it becomes ready to run
         """
-        def _ready_task_is(self, task):
+        def _ready_task(self, task):
             self._readyTasks.append(task)
 
         """
         This is called by a Task when it has completed execution
         This is only called by tasks that are listed as dependencies
         """
-        def _done_task_is(self, task):
+        def _notify_done(self, task):
             self._tasks.remove(task)
             self._runningTasks.remove(task)
 
         """
-        This runs all tasks in dependency order without running more than 'numProcs'
-        processes at one time
+        This runs all tasks in dependency order without running more than
+        'numProcs' processes at one time
         """
-        def run_request_is(self):
-
+        def run_tasks(self):
             # ignore empty call
             if not self._tasks: # not empty check
                 return
 
             # set task settings
             for task in self._tasks:
-
                 # tell the tasks to actually run their command (optionally)
-                task._run_is(self._runTasks)
-
-                # ask the tasks to report if they are already to run (root tasks)
-                task._ready_request_is()
-
+                task._run_command(self._runTasks)
+                # ask the tasks to report if they are already to run
+                # (root tasks)
+                task._ready_request()
             # pre-compute some number for statistics
             totalTasks = len(self._tasks)
 
             # run all tasks until there is none left
             while self._tasks: # not empty check
-
                 # wait for an available task to run
                 if not self._readyTasks:
                     time.sleep(.1)
                     continue
-
                 # wait for an available process slot
                 while len(self._runningTasks) >= self._numProcs:
                     time.sleep(.1)
-
                 # get the next ready task
                 task = self._readyTasks[0]
                 self._readyTasks.remove(task)
                 self._runningTasks.append(task)
-
-                # compute the number of remaining tasks before starting next task
+                # compute the number of remaining tasks before starting next
+                # task
                 remainingTasks = len(self._tasks)
-
                 # run it
                 task.start()
-
                 # show progress (optionally)
                 if self._showProgress:
                     self.__print_progress(totalTasks, remainingTasks)
@@ -234,42 +234,42 @@ class Task(threading.Thread):
                 self.__print_progress(totalTasks, len(self._tasks))
 
         """
-        This function is called by tasks at the beginning of their 'run' function
+        This function is called by tasks at the beginning of their 'run'
+        function
         """
-        def _running_task_is(self, task):
-
+        def _running_task(self, task):
             # only print the command when 'showCommands' is True
             if self._showCommands:
-
                 # format the output string
-                text = "[" + task.name() + "] " + task.command()
-                if task.output():
-                    text += " &> " + task.output()
-
+                text = "[" + task.get_name() + "] " + task.get_command()
+                if task.get_output_file():
+                    text += " &> " + task.get_output_file()
                 # print
                 self.__print(text)
 
         """
-        This function is called by a task when an error code is returned from the task
+        This function is called by a task when an error code is returned from
+        the task
         """
-        def _errored_task_is(self, task, code):
-
+        def _errored_task(self, task, code):
             # format the output string
-            text = "[" + task.name() + "] ERROR: " + task.command()
-            if task.output():
-                text += " &> " + task.output()
-            text += "\nReturned " + str(code)
+            text = "[" + task.get_name() + "] ERROR: " + task.get_command()
+            if task.get_output_file():
+                text += " &> " + task.get_output_file()
+            if type(code) == int:
+                text += "\nReturn: " + str(code)
+            else:
+                text += "\nMesage: " + code
             if USE_TERM_COLOR:
                 text = colored(text, 'red')
-
             # print
             self.__print(text)
-
             # kill
             os._exit(-1)
 
         """
-        This function is called by the manager to show the progress in the output
+        This function is called by the manager to show the progress in the
+        output
         """
         def __print_progress(self, total, remaining):
 
@@ -287,7 +287,8 @@ class Task(threading.Thread):
             self.__print(text)
 
         """
-        This function is used to print a message to the output in a thread safe manner
+        This function is used to print a message to the output in a thread safe
+        manner
         """
         def __print(self, *args, **kwargs):
             self._printLock.acquire(True)

@@ -14,13 +14,13 @@ except:
 manager = taskrun.Task.Manager(numProcs=2, showCommands=True, runTasks=True, showProgress=True)
 
 # create some tasks
-task1 = manager.task_new("Task1", "cat LICENSE");
-task2 = manager.task_new("Task2", "echo world hello!", "fun/output.txt");
-task3 = manager.task_new("Task3", "mkdir fun");
+task1 = manager.new_task("Task1", "cat LICENSE");
+task2 = manager.new_task("Task2", "echo world hello!", "fun/output.txt");
+task3 = manager.new_task("Task3", "mkdir fun");
 
 # set task dependencies
-task1.dependency_is(task2)
-task2.dependency_is(task3)
+task1.add_dependency(task2)
+task2.add_dependency(task3)
 
 # run all tasks
-manager.run_request_is()
+manager.run_tasks()
