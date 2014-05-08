@@ -41,7 +41,7 @@ except ImportError:
 USE_TERM_COLOR &= sys.stdout.isatty()
 
 # this declares the version
-VERSION = (2, 0, 0)
+VERSION = (2, 1, 0)
 
 """
 This defines one task to be executed
@@ -114,7 +114,7 @@ class Task(threading.Thread):
     """
     def run(self):
         # inform the manager that this task is now running
-        self._manager._running_task(self)
+        self._manager._notify_running(self)
 
         # ensure the command has been set
         if not self._command:
@@ -137,7 +137,7 @@ class Task(threading.Thread):
             # check the return code
             ret = proc.returncode
             if ret != 0:
-                self._manager._errored_task(self, ret)
+                self._manager._notify_error(self, ret)
 
         # inform the manager of task completion
         self._manager._notify_done(self)
@@ -164,6 +164,7 @@ class Task(threading.Thread):
             self._showCommands = showCommands
             self._runTasks = runTasks
             self._showProgress = showProgress
+            self._totalTasks = None
 
         """
         This is the effective constructor for a task
@@ -181,12 +182,60 @@ class Task(threading.Thread):
             self._readyTasks.append(task)
 
         """
+        This function is called by tasks at the beginning of their 'run'
+        function
+        """
+        def _notify_running(self, task):
+            # only print the command when 'showCommands' is True
+            if self._showCommands:
+                # format the output string
+                text = "[Starting '" + task.get_name() + "'] " + \
+                       task.get_command()
+                if task.get_output_file():
+                    text += " &> " + task.get_output_file()
+                # print
+                self.__print(text)
+            # show progress
+            self.__print_progress()
+
+        """
         This is called by a Task when it has completed execution
         This is only called by tasks that are listed as dependencies
         """
         def _notify_done(self, task):
             self._tasks.remove(task)
             self._runningTasks.remove(task)
+            # only print the command when 'showCommands' is True
+            if self._showCommands:
+                # format the output string
+                text = "[Completed '" + task.get_name() + "'] " + \
+                       task.get_command()
+                if task.get_output_file():
+                    text += " &> " + task.get_output_file()
+                # print
+                self.__print(text)
+            # show progress
+            self.__print_progress()
+
+        """
+        This function is called by a task when an error code is returned from
+        the task
+        """
+        def _notify_error(self, task, code):
+            # format the output string
+            text = "[" + task.get_name() + "] ERROR: " + task.get_command()
+            if task.get_output_file():
+                text += " &> " + task.get_output_file()
+            if type(code) == int:
+                text += "\nReturn: " + str(code)
+            else:
+                text += "\nMesage: " + code
+            if USE_TERM_COLOR:
+                text = colored(text, 'red')
+            # print
+            self.__print(text)
+            # kill
+            os._exit(-1)
 
         """
         This runs all tasks in dependency order without running more than
@@ -204,8 +253,9 @@ class Task(threading.Thread):
                 # ask the tasks to report if they are already to run
                 # (root tasks)
                 task._ready_request()
-            # pre-compute some number for statistics
-            totalTasks = len(self._tasks)
+
+            # pre-compute some numbers for statistics
+            self._totalTasks = len(self._tasks)
 
             # run all tasks until there is none left
             while self._tasks: # not empty check
@@ -220,71 +270,38 @@ class Task(threading.Thread):
                 task = self._readyTasks[0]
                 self._readyTasks.remove(task)
                 self._runningTasks.append(task)
-                # compute the number of remaining tasks before starting next
-                # task
-                remainingTasks = len(self._tasks)
                 # run it
                 task.start()
-                # show progress (optionally)
-                if self._showProgress:
-                    self.__print_progress(totalTasks, remainingTasks)
-
-            # show progress (optionally)
-            if self._showProgress:
-                self.__print_progress(totalTasks, len(self._tasks))
-
-        """
-        This function is called by tasks at the beginning of their 'run'
-        function
-        """
-        def _running_task(self, task):
-            # only print the command when 'showCommands' is True
-            if self._showCommands:
-                # format the output string
-                text = "[" + task.get_name() + "] " + task.get_command()
-                if task.get_output_file():
-                    text += " &> " + task.get_output_file()
-                # print
-                self.__print(text)
-
-        """
-        This function is called by a task when an error code is returned from
-        the task
-        """
-        def _errored_task(self, task, code):
-            # format the output string
-            text = "[" + task.get_name() + "] ERROR: " + task.get_command()
-            if task.get_output_file():
-                text += " &> " + task.get_output_file()
-            if type(code) == int:
-                text += "\nReturn: " + str(code)
-            else:
-                text += "\nMesage: " + code
-            if USE_TERM_COLOR:
-                text = colored(text, 'red')
-            # print
-            self.__print(text)
-            # kill
-            os._exit(-1)
 
         """
         This function is called by the manager to show the progress in the
         output
         """
-        def __print_progress(self, total, remaining):
+        def __print_progress(self):
+            # show progress (optionally)
+            if self._showProgress:
+                # generate numbers
+                total = self._totalTasks
+                done = total - len(self._tasks)
+                started = done + len(self._runningTasks);
+                done_percent = int(round((done / float(total)) * 100.00, 0))
+                started_percent = int(round((started / float(total)) * 100.00, \
+                                            0))
 
-            # generate numbers
-            processed = total - remaining
-            percent = (processed / float(total)) * 100.00
-            percent = int(round(percent, 0))
+                # format the output string
+                text = ("{0:d}% Completed ({1:d} of {2:d}) {3:d}% Started "
+                        "({4:d} of {5:d})").format(done_percent, done, total,
+                                                   started_percent, started,
+                                                   total)
+                text = ("{0:d}% ({1:d}) Completed; {2:d}% ({3:d}) Started; "
+                        "({4:d} Total)").format(done_percent, done,
+                                                started_percent, started,
+                                                total)
+                if USE_TERM_COLOR:
+                    text = colored(text, 'green')
 
-            # format the output string
-            text = "{0:d}% ({1:d} of {2:d})".format(percent, processed, total)
-            if USE_TERM_COLOR:
-                text = colored(text, 'green')
-
-            # print
-            self.__print(text)
+                # print
+                self.__print(text)
 
         """
         This function is used to print a message to the output in a thread safe

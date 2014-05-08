@@ -32,10 +32,11 @@ from taskrun import *
 
 setup(name='taskrun',
       version='.'.join([str(v) for v in taskrun.VERSION]),
-      description='An easy-to-use python package for running tasks with dependencies and process management',
+      description=('An easy-to-use python package for running tasks with '
+                   'dependencies and process management'),
       author='Nic McDonald',
       author_email='nicci02@hotmail.com',
       license='BSD',
-      url='http://github.com/nicmcd/taskrunpy',
+      url='http://github.com/nicmcd/taskrun',
       packages=['taskrun'],
       )
