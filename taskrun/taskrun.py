@@ -24,7 +24,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from __future__ import print_function # backwards print compatibility
+# Python 3 compatibility
+from __future__ import (absolute_import, division,
+                        print_function, unicode_literals)
 import multiprocessing
 import os
 import subprocess
@@ -39,9 +41,6 @@ try:
 except ImportError:
     USE_TERM_COLOR = False
 USE_TERM_COLOR &= sys.stdout.isatty()
-
-# this declares the version
-VERSION = (2, 1, 0)
 
 """
 This defines one task to be executed

@@ -1,3 +1,3 @@
-from taskrun import Task
+from .taskrun import *
 
-__ALL__ = [ 'Task' ]
+__version__ = '2.2.0'
