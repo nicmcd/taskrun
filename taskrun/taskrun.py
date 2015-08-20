@@ -129,7 +129,7 @@ class Task(threading.Thread):
             proc = subprocess.Popen(self._command, stdout=ofd, stderr=ofd, \
                                     shell=True)
             # wait for the process to finish
-            proc.wait()
+            proc.communicate()
             # close the output
             if self._output_file is not None:
                 ofd.close()
