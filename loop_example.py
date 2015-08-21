@@ -9,8 +9,8 @@ except:
     print("python{2,3} setup.py install --user")
     sys.exit(-1)
 
-manager = taskrun.Task.Manager(numProcs=20, showCommands=True, runTasks=True, \
-                               showProgress=True)
+manager = taskrun.Manager(numProcs=20, showCommands=True, runTasks=True, \
+                          showProgress=True)
 
 vcs = [1, 2, 3, 4]
 rates = [20, 40, 60, 80, 100]

@@ -131,8 +131,7 @@ class Task(threading.Thread):
             # wait for the process to finish
             proc.communicate()
             # close the output
-            if self._output_file is not None:
-                ofd.close()
+            ofd.close()
             # check the return code
             ret = proc.returncode
             if ret != 0:
@@ -145,168 +144,168 @@ class Task(threading.Thread):
             notifiee._notify_done(self)
 
 
-    """
-    This nested class manages a group of tasks
-    """
-    class Manager():
+"""
+This nested class manages a group of tasks
+"""
+class Manager():
 
-        def __init__(self, numProcs=None, showCommands=True, runTasks=True, \
-                     showProgress=True):
-            self._numProcs = numProcs
-            if not numProcs:
-                self._numProcs = multiprocessing.cpu_count()
-            self._printLock = threading.Lock()
-            self._tasks = []
-            self._readyTasks = []
-            self._runningTasks = []
-            self._printLock = threading.Lock()
-            self._showCommands = showCommands
-            self._runTasks = runTasks
-            self._showProgress = showProgress
-            self._totalTasks = None
+  def __init__(self, numProcs=None, showCommands=True, runTasks=True, \
+               showProgress=True):
+    self._numProcs = numProcs
+    if not numProcs:
+      self._numProcs = multiprocessing.cpu_count()
+    self._printLock = threading.Lock()
+    self._tasks = []
+    self._readyTasks = []
+    self._runningTasks = []
+    self._printLock = threading.Lock()
+    self._showCommands = showCommands
+    self._runTasks = runTasks
+    self._showProgress = showProgress
+    self._totalTasks = None
 
-        """
-        This is the effective constructor for a task
-        It also adds the task to this manager instance
-        """
-        def new_task(self, name, command=None, output_file=None):
-            task = Task(self, name, command, output_file)
-            self._tasks.append(task)
-            return task
+  """
+  This is the effective constructor for a task
+  It also adds the task to this manager instance
+  """
+  def new_task(self, name, command=None, output_file=None):
+      task = Task(self, name, command, output_file)
+      self._tasks.append(task)
+      return task
 
-        """
-        This is called by a Task when it becomes ready to run
-        """
-        def _ready_task(self, task):
-            self._readyTasks.append(task)
+  """
+  This is called by a Task when it becomes ready to run
+  """
+  def _ready_task(self, task):
+      self._readyTasks.append(task)
 
-        """
-        This function is called by tasks at the beginning of their 'run'
-        function
-        """
-        def _notify_running(self, task):
-            # only print the command when 'showCommands' is True
-            if self._showCommands:
-                # format the output string
-                text = "[Starting '" + task.get_name() + "'] " + \
-                       task.get_command()
-                if task.get_output_file():
-                    text += " &> " + task.get_output_file()
-                # print
-                self.__print(text)
-            # show progress
-            self.__print_progress()
+  """
+  This function is called by tasks at the beginning of their 'run'
+  function
+  """
+  def _notify_running(self, task):
+      # only print the command when 'showCommands' is True
+      if self._showCommands:
+          # format the output string
+          text = "[Starting '" + task.get_name() + "'] " + \
+                 task.get_command()
+          if task.get_output_file():
+              text += " &> " + task.get_output_file()
+          # print
+          self.__print(text)
+      # show progress
+      self.__print_progress()
 
-        """
-        This is called by a Task when it has completed execution
-        This is only called by tasks that are listed as dependencies
-        """
-        def _notify_done(self, task):
-            self._tasks.remove(task)
-            self._runningTasks.remove(task)
-            # only print the command when 'showCommands' is True
-            if self._showCommands:
-                # format the output string
-                text = "[Completed '" + task.get_name() + "'] " + \
-                       task.get_command()
-                if task.get_output_file():
-                    text += " &> " + task.get_output_file()
-                # print
-                self.__print(text)
-            # show progress
-            self.__print_progress()
+  """
+  This is called by a Task when it has completed execution
+  This is only called by tasks that are listed as dependencies
+  """
+  def _notify_done(self, task):
+      self._tasks.remove(task)
+      self._runningTasks.remove(task)
+      # only print the command when 'showCommands' is True
+      if self._showCommands:
+          # format the output string
+          text = "[Completed '" + task.get_name() + "'] " + \
+                 task.get_command()
+          if task.get_output_file():
+              text += " &> " + task.get_output_file()
+          # print
+          self.__print(text)
+      # show progress
+      self.__print_progress()
 
-        """
-        This function is called by a task when an error code is returned from
-        the task
-        """
-        def _notify_error(self, task, code):
-            # format the output string
-            text = "[" + task.get_name() + "] ERROR: " + task.get_command()
-            if task.get_output_file():
-                text += " &> " + task.get_output_file()
-            if type(code) == int:
-                text += "\nReturn: " + str(code)
-            else:
-                text += "\nMesage: " + code
-            if USE_TERM_COLOR:
-                text = colored(text, 'red')
-            # print
-            self.__print(text)
-            # kill
-            os._exit(-1)
+  """
+  This function is called by a task when an error code is returned from
+  the task
+  """
+  def _notify_error(self, task, code):
+      # format the output string
+      text = "[" + task.get_name() + "] ERROR: " + task.get_command()
+      if task.get_output_file():
+          text += " &> " + task.get_output_file()
+      if type(code) == int:
+          text += "\nReturn: " + str(code)
+      else:
+          text += "\nMesage: " + code
+      if USE_TERM_COLOR:
+          text = colored(text, 'red')
+      # print
+      self.__print(text)
+      # kill
+      os._exit(-1)
 
-        """
-        This runs all tasks in dependency order without running more than
-        'numProcs' processes at one time
-        """
-        def run_tasks(self):
-            # ignore empty call
-            if not self._tasks: # not empty check
-                return
+  """
+  This runs all tasks in dependency order without running more than
+  'numProcs' processes at one time
+  """
+  def run_tasks(self):
+      # ignore empty call
+      if not self._tasks: # not empty check
+          return
 
-            # set task settings
-            for task in self._tasks:
-                # tell the tasks to actually run their command (optionally)
-                task._run_command(self._runTasks)
-                # ask the tasks to report if they are already to run
-                # (root tasks)
-                task._ready_request()
+      # set task settings
+      for task in self._tasks:
+          # tell the tasks to actually run their command (optionally)
+          task._run_command(self._runTasks)
+          # ask the tasks to report if they are already to run
+          # (root tasks)
+          task._ready_request()
 
-            # pre-compute some numbers for statistics
-            self._totalTasks = len(self._tasks)
+      # pre-compute some numbers for statistics
+      self._totalTasks = len(self._tasks)
 
-            # run all tasks until there is none left
-            while self._tasks: # not empty check
-                # wait for an available task to run
-                if not self._readyTasks:
-                    time.sleep(.1)
-                    continue
-                # wait for an available process slot
-                while len(self._runningTasks) >= self._numProcs:
-                    time.sleep(.1)
-                # get the next ready task
-                task = self._readyTasks[0]
-                self._readyTasks.remove(task)
-                self._runningTasks.append(task)
-                # run it
-                task.start()
+      # run all tasks until there is none left
+      while self._tasks: # not empty check
+          # wait for an available task to run
+          if not self._readyTasks:
+              time.sleep(.1)
+              continue
+          # wait for an available process slot
+          while len(self._runningTasks) >= self._numProcs:
+              time.sleep(.1)
+          # get the next ready task
+          task = self._readyTasks[0]
+          self._readyTasks.remove(task)
+          self._runningTasks.append(task)
+          # run it
+          task.start()
 
-        """
-        This function is called by the manager to show the progress in the
-        output
-        """
-        def __print_progress(self):
-            # show progress (optionally)
-            if self._showProgress:
-                # generate numbers
-                total = self._totalTasks
-                done = total - len(self._tasks)
-                started = done + len(self._runningTasks);
-                done_percent = int(round((done / float(total)) * 100.00, 0))
-                started_percent = int(round((started / float(total)) * 100.00, \
-                                            0))
+  """
+  This function is called by the manager to show the progress in the
+  output
+  """
+  def __print_progress(self):
+      # show progress (optionally)
+      if self._showProgress:
+          # generate numbers
+          total = self._totalTasks
+          done = total - len(self._tasks)
+          started = done + len(self._runningTasks);
+          done_percent = int(round((done / float(total)) * 100.00, 0))
+          started_percent = int(round((started / float(total)) * 100.00, \
+                                      0))
 
-                # format the output string
-                text = ("{0:d}% Completed ({1:d} of {2:d}) {3:d}% Started "
-                        "({4:d} of {5:d})").format(done_percent, done, total,
-                                                   started_percent, started,
-                                                   total)
-                text = ("{0:d}% ({1:d}) Completed; {2:d}% ({3:d}) Started; "
-                        "({4:d} Total)").format(done_percent, done,
-                                                started_percent, started,
-                                                total)
-                if USE_TERM_COLOR:
-                    text = colored(text, 'green')
+          # format the output string
+          text = ("{0:d}% Completed ({1:d} of {2:d}) {3:d}% Started "
+                  "({4:d} of {5:d})").format(done_percent, done, total,
+                                             started_percent, started,
+                                             total)
+          text = ("{0:d}% ({1:d}) Completed; {2:d}% ({3:d}) Started; "
+                  "({4:d} Total)").format(done_percent, done,
+                                          started_percent, started,
+                                          total)
+          if USE_TERM_COLOR:
+              text = colored(text, 'green')
 
-                # print
-                self.__print(text)
+          # print
+          self.__print(text)
 
-        """
-        This function is used to print a message to the output in a thread safe
-        manner
-        """
-        def __print(self, *args, **kwargs):
-            self._printLock.acquire(True)
-            print(*args, **kwargs)
-            self._printLock.release()
+  """
+  This function is used to print a message to the output in a thread safe
+  manner
+  """
+  def __print(self, *args, **kwargs):
+      self._printLock.acquire(True)
+      print(*args, **kwargs)
+      self._printLock.release()

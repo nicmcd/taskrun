@@ -9,7 +9,8 @@ except:
     sys.exit(-1)
 
 # create a task manager
-manager = taskrun.Task.Manager(numProcs=2, showCommands=True, runTasks=True, showProgress=True)
+manager = taskrun.Manager(numProcs=2, showCommands=True, runTasks=True,
+                          showProgress=True)
 
 # create some tasks
 task1 = manager.new_task("Task1", "cat LICENSE");
