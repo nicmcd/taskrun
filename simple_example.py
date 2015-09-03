@@ -1,12 +1,7 @@
+import multiprocessing
 import sys
 
-try:
-    import taskrun
-except ImportError:
-    print("'taskrun' doesn't appear to be installed. Did you install it?")
-    print("You can install it locally by running:")
-    print("python{2,3} setup.py install --user")
-    sys.exit(-1)
+import taskrun
 
 def doit(first, *args, **kwargs):
   print('first:')
@@ -18,16 +13,22 @@ def doit(first, *args, **kwargs):
   for k in kwargs:
     print('  {0}->{1}'.format(k, kwargs[k]))
 
+# create a resource manager
+rm = taskrun.ResourceManager(
+  taskrun.Resource('cpu', 1, multiprocessing.cpu_count()),
+  taskrun.Resource('mem', 500, 8000))
+
 # create a task manager
-manager = taskrun.Manager(numProcs=2, runTasks=True,
-                          showDescriptions=True, showProgress=True)
+ob = taskrun.Observer(show_starting=True, show_completed=True)
+tm = taskrun.TaskManager(rm, ob)
 
 # create some tasks
-task1 = taskrun.ProcessTask(manager, "Task1", "cat LICENSE");
-task2 = taskrun.ProcessTask(manager, "Task2", "echo world hello!",
-                            "/tmp/fun/output.txt");
-task3 = taskrun.ProcessTask(manager, "Task3", "mkdir -p /tmp/fun");
-task4 = taskrun.FunctionTask(manager, "Task4", doit, 1, 2, 3, age=29, car='BMW')
+task1 = taskrun.ProcessTask(tm, "Task1", "cat LICENSE");
+task2 = taskrun.ProcessTask(tm, "Task2", "echo \"this is stdout\"; "
+                            "echo \"this is stderr\" 1>&2",
+                            "/tmp/fun/output.txt", "/tmp/fun/error.txt");
+task3 = taskrun.ProcessTask(tm, "Task3", "mkdir -p /tmp/fun");
+task4 = taskrun.FunctionTask(tm, "Task4", doit, 1, 2, 3, age=29, car='BMW')
 
 # set task dependencies
 task1.add_dependency(task2)
@@ -37,4 +38,4 @@ task4.add_dependency(task2)
 task4.add_dependency(task3)
 
 # run all tasks
-manager.run_tasks()
+tm.run_tasks()

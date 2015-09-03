@@ -1,46 +1,56 @@
+import multiprocessing
+import numpy
 import random
 import sys
+import time
 
-try:
-    import taskrun
-except:
-    print("'taskrun' doesn't appear to be installed. Did you install it?")
-    print("You can install it locally by running:")
-    print("python{2,3} setup.py install --user")
-    sys.exit(-1)
+import taskrun
 
-manager = taskrun.Manager(numProcs=20, runTasks=True,
-                          showDescriptions=True, showProgress=True)
+# create a resource manager
+rm = taskrun.ResourceManager(
+  taskrun.Resource('cpu', 1, multiprocessing.cpu_count()),
+  taskrun.Resource('mem', 500, 8000))
 
-vcs = [1, 2, 3, 4]
-rates = [20, 40, 60, 80, 100]
+# create a task manager
+ob = taskrun.Observer(show_starting=True, show_completed=True)
+#ob = taskrun.Observer(show_starting=False, show_completed=False)
+tm = taskrun.TaskManager(rm, ob)
+
+vcs = numpy.arange(1, 33, 1)
+rates = numpy.arange(1, 101, 1)
 
 random.seed(None)
 def rsleep():
-    return 0 #random.randint(1,3)
+  return 0 #random.randint(1,3)
 
-map_all = taskrun.ProcessTask(manager, "Map_All", "sleep " + str(rsleep()))
+map_all = taskrun.ProcessTask(tm, "Map_All",
+                              "sleep " + str(rsleep()))
 
-reduce_all = taskrun.ProcessTask(manager, "Reduce_All",
+reduce_all = taskrun.ProcessTask(tm, "Reduce_All",
                                  "sleep " + str(rsleep()))
 
 for vc in vcs:
-    name = "Map_" + str(vc)
+  name = "Map_" + str(vc)
+  cmd = "sleep " + str(rsleep())
+  sub_map = taskrun.ProcessTask(tm, name, cmd)
+  sub_map.add_dependency(map_all)
+
+  name = "Reduce_" + str(vc)
+  cmd = "sleep " + str(rsleep())
+  sub_reduce = taskrun.ProcessTask(tm, name, cmd)
+  reduce_all.add_dependency(sub_reduce)
+
+  for rate in rates:
+    name = "Worker_" + str(vc) + "-" + str(rate)
     cmd = "sleep " + str(rsleep())
-    sub_map = taskrun.ProcessTask(manager, name, cmd)
-    sub_map.add_dependency(map_all)
+    task = taskrun.ProcessTask(tm, name, cmd)
+    task.add_dependency(sub_map)
+    sub_reduce.add_dependency(task)
 
-    name = "Reduce_" + str(vc)
-    cmd = "sleep " + str(rsleep())
-    sub_reduce = taskrun.ProcessTask(manager, name, cmd)
-    reduce_all.add_dependency(sub_reduce)
-
-    for rate in rates:
-        name = "Worker_" + str(vc) + "-" + str(rate)
-        cmd = "sleep " + str(rsleep())
-        out = "/dev/null"
-        task = taskrun.ProcessTask(manager, name, cmd, out)
-        task.add_dependency(sub_map)
-        sub_reduce.add_dependency(task)
-
-manager.run_tasks()
+num = tm.num_tasks()
+start = time.time()
+tm.run_tasks()
+stop = time.time()
+elapsed = stop - start
+print('tasks={0} / secs={1} --> task_per_sec={2}'
+      .format(num, elapsed, num / elapsed))
