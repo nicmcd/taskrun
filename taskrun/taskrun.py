@@ -1,5 +1,5 @@
 """
-Copyright (c) 2013, Nic McDonald
+Copyright (c) 2013-2015, Nic McDonald
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -181,7 +181,7 @@ class FunctionTask(Task):
 
 
 """
-This nested class manages a group of tasks
+This class manages a group of tasks
 """
 class Manager(object):
 
