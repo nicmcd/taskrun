@@ -41,6 +41,41 @@ This class represents one resource being consumed
 class Resource(object):
 
   def __init__(self, name, default, total):
-    self.name = name
-    self.default = default
-    self.amount = total
+    self._name = name
+    self._default = default
+    self._total = total
+    self._amount = total
+
+  @property
+  def name(self):
+    return self._name
+
+  @name.setter
+  def name(self, value):
+    self._name = name
+
+  @property
+  def default(self):
+    return self._default
+
+  @default.setter
+  def default(self, value):
+    self._default = value
+
+  @property
+  def total(self):
+    return self._total
+
+  @total.setter
+  def total(self, value):
+    self._total = value
+
+  @property
+  def amount(self):
+    return self._amount
+
+  @amount.setter
+  def amount(self, value):
+    self._amount = value
+    assert self._amount >= 0
+    assert self._amount <= self._total

@@ -47,7 +47,7 @@ class TaskManager(object):
     self._running_tasks = []
     self._resource_manager = resource_manager
     self._observer = observer
-    self._access_lock = threading.Lock()
+    self._condition_variable = threading.Condition()
 
   """
   This adds a task to this manager
@@ -66,21 +66,27 @@ class TaskManager(object):
   This is called by a Task when it becomes ready to run
   """
   def task_is_ready(self, task):
-    self._access_lock.acquire()
-    self._ready_tasks.append(task)
-    self._access_lock.release()
+    with self._condition_variable:
+      # add task to ready list
+      self._ready_tasks.append(task)
+
+      # notify waiting threads
+      self._condition_variable.notify()
 
   """
   This is called by a Task when it has completed execution
   """
   def task_completed(self, task):
-    self._access_lock.acquire()
-    self._tasks.remove(task)
-    self._running_tasks.remove(task)
-    self._access_lock.release()
+    with self._condition_variable:
+      # remove task from lists
+      self._tasks.remove(task)
+      self._running_tasks.remove(task)
 
-    # inform the resource manager of the completion
-    self._resource_manager.task_completed(task)
+      # give back resources
+      self._resource_manager.task_completed(task)
+
+      # notify waiting threads
+      self._condition_variable.notify()
 
     # pass info to the observer
     if 'task_completed' in dir(self._observer):
@@ -110,51 +116,59 @@ class TaskManager(object):
     if not self._tasks: # not empty check
       return
 
-    # set task settings
+    # ask the tasks if they are ready to run (find root tasks)
     for task in self._tasks:
-      # ask the tasks to report if they are ready to run
-      # (find root tasks)
       if task.ready():
-        self.task_is_ready(task)
+        self._ready_tasks.append(task)
 
     # run all tasks until there is none left
     while True:
-      # get the number of tasks left
-      self._access_lock.acquire()
-      num_tasks_left = len(self._tasks)
-      num_ready_tasks = len(self._ready_tasks)
-      self._access_lock.release()
+      next_task = None
 
-      # check if done
-      if num_tasks_left == 0:
-        break;
+      # use the condition variable for pausing/resuming
+      with self._condition_variable:
+        # check if we are done
+        if len(self._tasks) == 0:
+          break;
 
-      # wait for an available task to run
-      if num_ready_tasks == 0:
-        time.sleep(0.25)  # 250ms
-        continue
+        # wait for at least one ready task
+        if len(self._ready_tasks) == 0:
+          self._condition_variable.wait()
+          continue
 
-      # get the next ready task
-      self._access_lock.acquire()
-      task = self._ready_tasks[0]
-      self._ready_tasks.remove(task)
-      self._access_lock.release()
+        # find the highest priority task
+        next_task = self._ready_tasks[0]
+        for task in self._ready_tasks[1:]:
+          if (next_task.priority is None and
+              task.priority is not None):
+            next_task = task
+          elif (next_task.priority is not None and
+                task.priority is not None and
+                task.priority > next_task.priority):
+            next_task = task
 
-      # wait until the task can run
-      while self._resource_manager.task_starting(task) == False:
-        time.sleep(0.25)  # 250ms
+        # check if there enough resources to run the task
+        if self._resource_manager.task_starting(next_task) == False:
+          self._condition_variable.wait()
+          continue
 
-      # append task to running tasks list
-      self._access_lock.acquire()
-      self._running_tasks.append(task)
-      self._access_lock.release()
+        # set to running (remove from ready, add to running)
+        self._ready_tasks.remove(next_task)
+        self._running_tasks.append(next_task)
+
+      # this indent escapes the condition variable lock
+      #  now run the next task
 
       # notify observer
       if 'task_starting' in dir(self._observer):
-        self._observer.task_starting(task)
+        self._observer.task_starting(next_task)
 
       # run it
-      task.start()
+      next_task.start()
+
+      # give up execution to other threads/processes
+      #  this allows tasks to start
+      time.sleep(0.000001)
 
     # turn off
     self._running = False

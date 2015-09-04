@@ -45,24 +45,41 @@ class Task(threading.Thread):
   """
   This instantiates a Task object, which is "abstract"
   """
-  def __init__(self, manager, name, **kwargs):
+  def __init__(self, manager, name):
     threading.Thread.__init__(self)
     self._manager = manager
     self._manager.add_task(self)
     self._name = name
+    self._resources = {}
+    self._priority = None
     self._dependencies = []
     self._notifiees = []
-    self._resources = {}
-    for key in kwargs:
-      if key.find('res_') == 0:
-        self._resources[key[4:]] = kwargs[key]
-      else:
-        raise TypeError('unsupported kwarg: {0}'.format(key))
 
-  def get_name(self):
+  @property
+  def name(self):
     return self._name
 
-  def get_resource(self, resource):
+  @name.setter
+  def name(self, value):
+    self._name = value
+
+  @property
+  def priority(self):
+    return self._priority
+
+  @priority.setter
+  def priority(self, value):
+    self._priority = value
+
+  @property
+  def resources(self):
+    return self._resources
+
+  @resources.setter
+  def resources(self, value):
+    self._resources = value
+
+  def resource(self, resource):
     if resource in self._resources:
       return self._resources[resource]
     else:

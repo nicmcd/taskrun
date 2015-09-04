@@ -53,12 +53,17 @@ class ResourceManager(object):
     # verify for all resources
     for resource in self._resources:
       # get consumption by task
-      consumes = task.get_resource(resource.name)
+      consumes = task.resource(resource.name)
       if consumes is None:
         consumes = resource.default
 
       # check if there is enough resource left
-      if resource.amount < consumes:
+      if consumes > resource.total:
+        raise RuntimeError('task \'{0}\' consumes {1} units of resource \'{2}\''
+                           ' but there is only {3} units total'
+                           .format(task.name, consumes, resource.name,
+                                   resource.total))
+      elif resource.amount < consumes:
         res = False
         break;
 
@@ -75,12 +80,17 @@ class ResourceManager(object):
     # check all resources
     for resource in self._resources:
       # get consumption by task
-      consumes = task.get_resource(resource.name)
+      consumes = task.resource(resource.name)
       if consumes is None:
         consumes = resource.default
 
       # check if there is enough resource left
-      if resource.amount < consumes:
+      if consumes > resource.total:
+        raise RuntimeError('task \'{0}\' consumes {1} units of resource \'{2}\''
+                           ' but there is only {3} units total'
+                           .format(task.name, consumes, resource.name,
+                                   resource.total))
+      elif resource.amount < consumes:
         res = False
         break;
 
@@ -88,7 +98,7 @@ class ResourceManager(object):
     if res == True:
       for resource in self._resources:
         # get consumption by task
-        consumes = task.get_resource(resource.name)
+        consumes = task.resource(resource.name)
         if consumes is None:
           consumes = resource.default
 
@@ -106,7 +116,7 @@ class ResourceManager(object):
     # increment all resources
     for resource in self._resources:
       # get consumption by task
-      consumes = task.get_resource(resource.name)
+      consumes = task.resource(resource.name)
       if consumes is None:
         consumes = resource.default
 

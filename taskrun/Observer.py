@@ -49,15 +49,15 @@ This defines the an Observer, one who watches what the Manager is executing.
 class Observer(object):
 
   def __init__(self, show_starting=True, show_completed=True):
-    self._print_lock = threading.Lock()
     self._show_starting = show_starting
     self._show_completed = show_completed
+    self._print_lock = threading.Lock()
 
   def task_starting(self, task):
     # only print the description when 'showDescriptions' is True
     if self._show_starting:
       # format the output string
-      text = "[Starting '" + task.get_name() + "'] " + task.describe()
+      text = "[Starting '" + task.name + "'] " + task.describe()
       # print
       self.__print(text)
 
@@ -65,13 +65,13 @@ class Observer(object):
     # only print the description when 'showDescriptions' is True
     if self._show_completed:
       # format the output string
-      text = "[Completed '" + task.get_name() + "'] " + task.describe()
+      text = "[Completed '" + task.name + "'] " + task.describe()
       # print
       self.__print(text)
 
   def task_error(self, task, errors):
     # format the output string
-    text = "[" + task.get_name() + "] ERROR: " + task.describe()
+    text = "[" + task.name + "] ERROR: " + task.describe()
     if type(errors) == int:
       text += "\n  Return: " + str(errors)
     else:
@@ -83,7 +83,6 @@ class Observer(object):
 
   """
   This function is called to show the progress in the output
-  """
   def __print_progress(self):
     # show progress (optionally)
     if self._showProgress:
@@ -108,6 +107,7 @@ class Observer(object):
 
       # print
       self.__print(text)
+  """
 
   """
   This function is used to print a message to the output in a thread safe
