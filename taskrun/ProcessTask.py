@@ -27,31 +27,75 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import multiprocessing
-import os
 import subprocess
-import threading
-import time
-import sys
 
 from .Task import Task
 
 
-"""
-This class is a Task that runs as a subprocess
-"""
-class ProcessTask(Task):
 
+class ProcessTask(Task):
   """
-  This instiates a ProcessTask object with a subprocess command
+  This class is a Task that runs as a subprocess
   """
-  def __init__(self, manager, name, command, stdout=None, stderr=None):
+
+  def __init__(self, manager, name, command):
+    """
+    This instiates a ProcessTask object with a subprocess command
+
+    Args:
+      manager (TaskManager) : passed to Task.__init__()
+      name (str)            : passed to Task.__init__()
+      command (str)         : the command to be run
+    """
+
     super(ProcessTask, self).__init__(manager, name)
     self._command = command
-    self._stdout_file = stdout
-    self._stderr_file = stderr
+    self._stdout_file = None
+    self._stderr_file = None
+    self.stdout = None
+    self.stderr = None
+
+  @property
+  def stdout_file(self):
+    """
+    Returns:
+      (str) : filename for stdout text
+    """
+    return self._stdout_file
+
+  @stdout_file.setter
+  def stdout_file(self, filename):
+    """
+    Sets the filename of the stdout text
+
+    Args:
+      filename (str) : a filename for stdout text
+    """
+    self._stdout_file = filename
+
+  @property
+  def stderr_file(self):
+    """
+    Returns:
+      (str) : filename for stderr text
+    """
+    return self._stderr_file
+
+  @stderr_file.setter
+  def stderr_file(self, filename):
+    """
+    Sets the filename of the stderr text
+
+    Args:
+      filename (str) : a filename for stderr text
+    """
+    self._stderr_file = filename
 
   def describe(self):
+    """
+    See Task.describe()
+    """
+
     text = self._command
     if self._stdout_file:
       text += " 1> " + self._stdout_file
@@ -60,6 +104,10 @@ class ProcessTask(Task):
     return text
 
   def execute(self):
+    """
+    See Task.execute()
+    """
+
     # format stdout and stderr outputs
     if self._stdout_file:
       stdout_fd = open(self._stdout_file, 'w')
@@ -83,8 +131,10 @@ class ProcessTask(Task):
 
     # close the output files
     if self._stdout_file:
+      #pylint: disable=maybe-no-member
       stdout_fd.close()
     if self._stderr_file:
+      #pylint: disable=maybe-no-member
       stderr_fd.close()
 
     # check the return code

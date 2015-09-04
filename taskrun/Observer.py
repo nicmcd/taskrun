@@ -27,11 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import multiprocessing
-import os
-import subprocess
 import threading
-import time
 import sys
 
 # conditionally import the termcolor package, it's OK if it doesn't exist
@@ -43,17 +39,33 @@ except ImportError:
 USE_TERM_COLOR &= sys.stdout.isatty()
 
 
-"""
-This defines the an Observer, one who watches what the Manager is executing.
-"""
 class Observer(object):
+  """
+  This defines the an Observer, one who watches what the Manager is executing.
+  This class is meant to be overridden by subclasses that want a custom way to
+  monitor observance of tasks starting and completing.
+  """
 
   def __init__(self, show_starting=True, show_completed=True):
+    """
+    Constructs an Observer
+
+    Args:
+      show_starting (bool) : print description when tasks start
+      show_completed (bool): print description when tasks complete
+    """
     self._show_starting = show_starting
     self._show_completed = show_completed
     self._print_lock = threading.Lock()
 
   def task_starting(self, task):
+    """
+    Notification of a task starting
+
+    Args:
+      task (Task): the task that is now starting
+    """
+
     # only print the description when 'showDescriptions' is True
     if self._show_starting:
       # format the output string
@@ -62,6 +74,13 @@ class Observer(object):
       self.__print(text)
 
   def task_completed(self, task):
+    """
+    Notification of a task completion
+
+    Args:
+      task (Task): the task that completed
+    """
+
     # only print the description when 'showDescriptions' is True
     if self._show_completed:
       # format the output string
@@ -70,6 +89,13 @@ class Observer(object):
       self.__print(text)
 
   def task_error(self, task, errors):
+    """
+    Notification of task failure
+
+    Args:
+      task (Task): the task that failed
+    """
+
     # format the output string
     text = "[" + task.name + "] ERROR: " + task.describe()
     if type(errors) == int:
@@ -81,39 +107,15 @@ class Observer(object):
     # print
     self.__print(text)
 
-  """
-  This function is called to show the progress in the output
-  def __print_progress(self):
-    # show progress (optionally)
-    if self._showProgress:
-      # generate numbers
-      total = self._totalTasks
-      done = total - len(self._tasks)
-      started = done + len(self._runningTasks);
-      done_percent = int(round((done / float(total)) * 100.00, 0))
-      started_percent = int(round((started / float(total)) * 100.00, 0))
-
-      # format the output string
-      text = ("{0:d}% Completed ({1:d} of {2:d}) {3:d}% Started "
-              "({4:d} of {5:d})").format(done_percent, done, total,
-                                         started_percent, started,
-                                         total)
-      text = ("{0:d}% ({1:d}) Completed; {2:d}% ({3:d}) Started; "
-              "({4:d} Total)").format(done_percent, done,
-                                      started_percent, started,
-                                      total)
-      if USE_TERM_COLOR:
-        text = colored(text, 'green')
-
-      # print
-      self.__print(text)
-  """
-
-  """
-  This function is used to print a message to the output in a thread safe
-  manner
-  """
   def __print(self, *args, **kwargs):
+    """
+    Thread safe printing
+
+    Args:
+      *args    : passed to print()
+      **kwargs : passed to print()
+    """
+
     self._print_lock.acquire(True)
     print(*args, **kwargs)
     self._print_lock.release()

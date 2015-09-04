@@ -27,20 +27,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import multiprocessing
 import os
-import subprocess
 import threading
 import time
-import sys
 
 
-"""
-This class manages a group of tasks
-"""
 class TaskManager(object):
+  """
+  This class manages a group of tasks
+  """
 
   def __init__(self, resource_manager, observer):
+    """
+    Constructs a TaskManager object
+
+    Args:
+      resource_manager (ResourceManager) : the resource manager to use
+      observer (Observer)                : the observer to user
+    """
+
     self._running = False
     self._tasks = []
     self._ready_tasks = []
@@ -49,23 +54,32 @@ class TaskManager(object):
     self._observer = observer
     self._condition_variable = threading.Condition()
 
-  """
-  This adds a task to this manager
-  """
   def add_task(self, task):
+    """
+    This adds a task to this manager
+
+    Args:
+      task (Task) : the task to add
+    """
+
     assert self._running == False
     self._tasks.append(task)
 
-  """
-  Retrieves the number of tasks
-  """
   def num_tasks(self):
+    """
+    Returns:
+      (num) : the number of tasks
+    """
     return len(self._tasks)
 
-  """
-  This is called by a Task when it becomes ready to run
-  """
-  def task_is_ready(self, task):
+  def task_ready(self, task):
+    """
+    This is called by a Task when it becomes ready to run
+
+    Args:
+      task (Task) : the task that is now ready to run
+    """
+
     with self._condition_variable:
       # add task to ready list
       self._ready_tasks.append(task)
@@ -73,10 +87,14 @@ class TaskManager(object):
       # notify waiting threads
       self._condition_variable.notify()
 
-  """
-  This is called by a Task when it has completed execution
-  """
   def task_completed(self, task):
+    """
+    This is called by a Task when it has completed execution
+
+    Args:
+      task (Task) : the task that completed
+    """
+
     with self._condition_variable:
       # remove task from lists
       self._tasks.remove(task)
@@ -92,23 +110,27 @@ class TaskManager(object):
     if 'task_completed' in dir(self._observer):
       self._observer.task_completed(task)
 
-  """
-  This function is called by a task when an error code is returned from
-  the task
-  """
   def task_error(self, task, errors):
+    """
+    This function is called by a task when an error code is returned from
+    the task
+
+    Args:
+      task (Task) : the task that encountered errors
+    """
+
     # pass info to the observer
     if 'task_error' in dir(self._observer):
       self._observer.task_error(task, errors)
 
     # kill
-    os._exit(-1)
+    os._exit(-1)  # pylint: disable=protected-access
 
-  """
-  This runs all tasks in dependency order and executing with the
-  ResourceManager's discretion
-  """
   def run_tasks(self):
+    """
+    This runs all tasks in dependency order and executing with the
+    ResourceManager's discretion
+    """
     assert self._running == False
     self._running = True
 
@@ -129,7 +151,7 @@ class TaskManager(object):
       with self._condition_variable:
         # check if we are done
         if len(self._tasks) == 0:
-          break;
+          break
 
         # wait for at least one ready task
         if len(self._ready_tasks) == 0:

@@ -27,27 +27,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import multiprocessing
-import os
-import subprocess
 import threading
-import time
-import sys
 
 
-"""
-This class manages a group of resources
-"""
 class ResourceManager(object):
+  """
+  This class manages a group of resources
+  """
 
   def __init__(self, *args):
-    self._resources = args;
+    """
+    Constructs a ResourceManager object
+
+    Args:
+      *args = variable number of Resource objects
+    """
+
+    self._resources = args
     self._access_lock = threading.Lock()
 
   def can_run(self, task):
-    res = True
+    """
+    Determines if a task can run
+
+    Args:
+      task (Task) : the task under question
+    """
 
     # lock access
+    res = True
     self._access_lock.acquire()
 
     # verify for all resources
@@ -65,16 +73,24 @@ class ResourceManager(object):
                                    resource.total))
       elif resource.amount < consumes:
         res = False
-        break;
+        break
 
     # release access and return
     self._access_lock.release()
     return res
 
   def task_starting(self, task):
-    res = True
+    """
+    Attempts to allow a task to start. This is essentially the same as
+    can_run() except that when successful, it decrements the corresponding
+    resources.
+
+    Args:
+      task (Task) : the task under question
+    """
 
     # lock access
+    res = True
     self._access_lock.acquire()
 
     # check all resources
@@ -92,7 +108,7 @@ class ResourceManager(object):
                                    resource.total))
       elif resource.amount < consumes:
         res = False
-        break;
+        break
 
     # if can start, decrement resources
     if res == True:
@@ -110,6 +126,13 @@ class ResourceManager(object):
     return res
 
   def task_completed(self, task):
+    """
+    Gives back the resources consumed by a task
+
+    Args:
+      task (Task) : the task under question
+    """
+
     # lock access
     self._access_lock.acquire()
 

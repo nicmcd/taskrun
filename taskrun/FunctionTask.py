@@ -27,33 +27,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import multiprocessing
-import os
-import subprocess
-import threading
-import time
-import sys
 
 from .Task import Task
 
 
-"""
-This class is a Task that runs as a function call
-"""
 class FunctionTask(Task):
+  """
+  This class is a Task that runs as a function call
+  """
 
-  """
-  This instiates a FunctionTask object with a function and arguments
-  """
   def __init__(self, manager, name, func, *args, **kwargs):
+    """
+    This instiates a FunctionTask object with a function and arguments
+
+    Args:
+      manager (TaskManager) : passed to Task.__init__()
+      name (str)            : passed to Task.__init__()
+      func (function)       : the function to be executed
+      *args                 : passed to func when executed
+      **kwargs              : passed to func when executed
+    """
+
     super(FunctionTask, self).__init__(manager, name)
     self._func = func
     self._args = args
     self._kwargs = kwargs
 
   def describe(self):
+    """
+    See taskrun.Task.describe()
+    """
+
     return "def {0}(args={1}, kwargs={2})".format(
       self._func.__name__, self._args, self._kwargs)
 
   def execute(self):
+    """
+    See taskrun.Task.execute()
+    """
+
     return self._func(*self._args, **self._kwargs)

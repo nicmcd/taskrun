@@ -27,20 +27,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import multiprocessing
-import os
-import subprocess
-import threading
-import time
-import sys
 
 
-"""
-This class represents one resource being consumed
-"""
 class Resource(object):
+  """
+  This class represents one resource being consumed
+  """
 
   def __init__(self, name, default, total):
+    """
+    Constructs a Resource object
+
+    Args:
+      name (str)    : the name of the resource
+      default (num) : default value of tasks that don't specify it
+      total (num)   : total available to be used by tasks
+    """
+
     self._name = name
     self._default = default
     self._total = total
@@ -48,34 +51,75 @@ class Resource(object):
 
   @property
   def name(self):
+    """
+    Returns:
+      (str) : name of this Resource
+    """
     return self._name
 
   @name.setter
   def name(self, value):
-    self._name = name
+    """
+    Sets the name of this Resource
+
+    Args:
+      value (str) : the new name
+    """
+    self._name = value
 
   @property
   def default(self):
+    """
+    Returns:
+      (num) : the default value
+    """
     return self._default
 
   @default.setter
   def default(self, value):
+    """
+    Sets the default value of this Resource
+
+    Args:
+      value (num) : the new default value
+    """
     self._default = value
 
   @property
   def total(self):
+    """
+    Returns:
+      (num) : the total amount of this resource
+    """
     return self._total
 
   @total.setter
   def total(self, value):
+    """
+    Sets the total amount of this Resource
+
+    Args:
+      value (num) : the new total amount
+    """
     self._total = value
 
   @property
   def amount(self):
+    """
+    Returns:
+      (num) : the current amount of this Resource
+    """
     return self._amount
 
   @amount.setter
   def amount(self, value):
+    """
+    Sets the current amount of this resource
+
+    Args:
+      value (num) : the new current amount
+    """
+
     self._amount = value
     assert self._amount >= 0
     assert self._amount <= self._total

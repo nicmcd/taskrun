@@ -27,87 +27,134 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import multiprocessing
-import os
-import subprocess
 import threading
-import time
-import sys
 
 
-"""
-This defines one task to be executed
-Each task has a set of dependencies, which are other tasks
-Each task notifies all tasks that are dependent on it upon completion
-"""
+#pylint: disable=abstract-class-not-used
 class Task(threading.Thread):
+  """
+  This defines one task to be executed
+  Each task has a set of dependencies, which are other tasks
+  Each task notifies all tasks that are dependent on it upon completion
+  """
 
-  """
-  This instantiates a Task object, which is "abstract"
-  """
   def __init__(self, manager, name):
-    threading.Thread.__init__(self)
+    """
+    This instantiates a Task object, which is "abstract"
+
+    Args:
+      manager (TaskManager) : the task manager this should be associated with
+      name (string)         : the name of this task
+    """
+
+    threading.Thread.__init__(self, name=name)
     self._manager = manager
     self._manager.add_task(self)
-    self._name = name
     self._resources = {}
     self._priority = None
     self._dependencies = []
     self._notifiees = []
 
   @property
-  def name(self):
-    return self._name
-
-  @name.setter
-  def name(self, value):
-    self._name = value
-
-  @property
   def priority(self):
+    """
+    Returns:
+      (num) : the priority of this task
+    """
     return self._priority
 
   @priority.setter
   def priority(self, value):
+    """
+    Sets the priority of this task
+
+    Args:
+      value (comparable) : the new priority
+    """
     self._priority = value
 
   @property
   def resources(self):
+    """
+    Returns:
+      (dict<str,num>) : the resources needed by this task
+    """
     return self._resources
 
   @resources.setter
   def resources(self, value):
+    """
+    Sets the resources needed by this task
+
+    Args:
+      value (dict<str,num>) : resources
+    """
     self._resources = value
 
   def resource(self, resource):
+    """
+    Returns the quantity of a given resource
+
+    Args:
+      resource (str) : resource to be queried
+    """
+
     if resource in self._resources:
       return self._resources[resource]
     else:
       return None
 
   def add_dependency(self, task):
+    """
+    Adds a dependency task to this task
+
+    Args:
+      task (Task) : a task dependency
+    """
+
     if self is task:
       raise ValueError('self dependency is not allowed')
     self._dependencies.append(task)
-    task.__add_notifiee(self)
+    task.add_notifiee(self)
 
-  def __add_notifiee(self, notifiee):
+  def add_notifiee(self, notifiee):
+    """
+    Adds a notifiee to the list
+
+    Args:
+      notifiee (Task) : a task to be notified when this one completes
+    """
     self._notifiees.append(notifiee)
 
   def ready(self):
+    """
+    Returns:
+      (bool) : tests whether this task is ready to execute
+    """
     return not self._dependencies # test for empty
 
   def task_completed(self, task):
+    """
+    Notification that a dependency has completed
+
+    Args:
+      task (Task) : the task that completed
+    """
+
     self._dependencies.remove(task)
     if not self._dependencies: # test for empty
-      self._manager.task_is_ready(self)
+      self._manager.task_ready(self)
 
   def run(self):
+    """
+    Executes the task by calling its execute() function
+    """
+
     # execute the task
     errors = None
     try:
       errors = self.execute()
-    except Exception as ex:
+    except RuntimeError as ex:
       errors = ex
 
     # handle potential errors
@@ -121,9 +168,17 @@ class Task(threading.Thread):
       notifiee.task_completed(self)
 
   def describe(self):
-    # returns a string representation of this class (not the name)
+    """
+    Returns:
+      (str) : a description of this task (not the name)
+    """
     raise NotImplementedError("subclasses should override this!")
 
   def execute(self):
-    # returns True for success, False otherwise
+    """
+    Executes this task
+
+    Returns:
+      (None or errors) : None for success, errors on failure
+    """
     raise NotImplementedError("subclasses should override this!")

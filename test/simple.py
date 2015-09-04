@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import multiprocessing
 import sys
 
@@ -25,9 +27,10 @@ tm = taskrun.TaskManager(rm, ob)
 # create some tasks
 task1 = taskrun.ProcessTask(tm, "Task1", "cat LICENSE");
 task2 = taskrun.ProcessTask(tm, "Task2", "echo \"this is stdout\"; "
-                            "echo \"this is stderr\" 1>&2",
-                            "/tmp/fun/output.txt", "/tmp/fun/error.txt");
-task3 = taskrun.ProcessTask(tm, "Task3", "mkdir -p /tmp/fun");
+                            "echo \"this is stderr\" 1>&2")
+task2.stdout = "/tmp/fun/output.txt"
+task2.stderr = "/tmp/fun/error.txt"
+task3 = taskrun.ProcessTask(tm, "Task3", "mkdir -p /tmp/fun")
 task4 = taskrun.FunctionTask(tm, "Task4", doit, 1, 2, 3, age=29, car='BMW')
 
 # set task dependencies
