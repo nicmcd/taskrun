@@ -1,5 +1,7 @@
 """This module provides the entire taskrun system"""
 
+from .Condition import Condition
+from .FunctionCondition import FunctionCondition
 from .FunctionTask import FunctionTask
 from .Observer import Observer
 from .ProcessTask import ProcessTask

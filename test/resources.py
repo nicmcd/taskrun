@@ -10,7 +10,7 @@ def myfunc(name, sleep):
 rm = taskrun.ResourceManager(
   taskrun.Resource('core', 9999, 4),
   taskrun.Resource('mem', 9999, 8000))
-ob = taskrun.Observer(show_starting=True, show_completed=True)
+ob = taskrun.Observer(show_started=True, show_bypassed=True, show_completed=True)
 tm = taskrun.TaskManager(rm, ob)
 
 t1 = taskrun.FunctionTask(tm, 'T1', myfunc, 'jimbo', 0.6)

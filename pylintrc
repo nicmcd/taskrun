@@ -1,5 +1,9 @@
 [MESSAGES CONTROL]
-disable=locally-disabled
+disable=locally-disabled,
+	too-many-branches,
+	too-many-instance-attributes,
+	abstract-class-not-used,
+	abstract-class-little-used
 
 [FORMAT]
 indent-string='  '

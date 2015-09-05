@@ -14,7 +14,7 @@ rm = taskrun.ResourceManager(
   taskrun.Resource('mem', 500, 8000))
 
 # create a task manager
-ob = taskrun.Observer(show_starting=True, show_completed=True)
+ob = taskrun.Observer(show_started=True, show_bypassed=True, show_completed=True)
 tm = taskrun.TaskManager(rm, ob)
 
 vcs = numpy.arange(1, 5, 1)

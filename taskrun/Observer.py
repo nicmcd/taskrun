@@ -27,7 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import threading
 import sys
 
 # conditionally import the termcolor package, it's OK if it doesn't exist
@@ -46,19 +45,22 @@ class Observer(object):
   monitor observance of tasks starting and completing.
   """
 
-  def __init__(self, show_starting=True, show_completed=True):
+  def __init__(self, show_started=True, show_bypassed=True,
+               show_completed=True, show_error=True):
     """
     Constructs an Observer
 
     Args:
-      show_starting (bool) : print description when tasks start
-      show_completed (bool): print description when tasks complete
+      show_started (bool)   : print description when tasks start
+      show_bypassed (bool)  : print description when tasks bypass
+      show_completed (bool) : print description when tasks complete
     """
-    self._show_starting = show_starting
+    self._show_started = show_started
+    self._show_bypassed = show_bypassed
     self._show_completed = show_completed
-    self._print_lock = threading.Lock()
+    self._show_error = show_error
 
-  def task_starting(self, task):
+  def task_started(self, task):
     """
     Notification of a task starting
 
@@ -66,12 +68,25 @@ class Observer(object):
       task (Task): the task that is now starting
     """
 
-    # only print the description when 'showDescriptions' is True
-    if self._show_starting:
+    if self._show_started:
       # format the output string
-      text = "[Starting '" + task.name + "'] " + task.describe()
+      text = "[Started '" + task.name + "'] " + task.describe()
       # print
-      self.__print(text)
+      print(text)
+
+  def task_bypassed(self, task):
+    """
+    Notification of a task bypass
+
+    Args:
+      task (Task): the task that is bypassed
+    """
+
+    if self._show_bypassed:
+      # format the output string
+      text = "[Bypassed '" + task.name + "'] " + task.describe()
+      # print
+      print(text)
 
   def task_completed(self, task):
     """
@@ -81,12 +96,11 @@ class Observer(object):
       task (Task): the task that completed
     """
 
-    # only print the description when 'showDescriptions' is True
     if self._show_completed:
       # format the output string
       text = "[Completed '" + task.name + "'] " + task.describe()
       # print
-      self.__print(text)
+      print(text)
 
   def task_error(self, task, errors):
     """
@@ -96,26 +110,14 @@ class Observer(object):
       task (Task): the task that failed
     """
 
-    # format the output string
-    text = "[" + task.name + "] ERROR: " + task.describe()
-    if type(errors) == int:
-      text += "\n  Return: " + str(errors)
-    else:
-      text += "\n  Message: " + str(errors)
-    if USE_TERM_COLOR:
-      text = colored(text, 'red')
-    # print
-    self.__print(text)
-
-  def __print(self, *args, **kwargs):
-    """
-    Thread safe printing
-
-    Args:
-      *args    : passed to print()
-      **kwargs : passed to print()
-    """
-
-    self._print_lock.acquire(True)
-    print(*args, **kwargs)
-    self._print_lock.release()
+    if self._show_error:
+      # format the output string
+      text = "[" + task.name + "] ERROR: " + task.describe()
+      if type(errors) == int:
+        text += "\n  Return: " + str(errors)
+      else:
+        text += "\n  Message: " + str(errors)
+      if USE_TERM_COLOR:
+        text = colored(text, 'red')
+      # print
+      print(text)

@@ -52,6 +52,7 @@ class TaskManager(object):
     self._running_tasks = []
     self._resource_manager = resource_manager
     self._observer = observer
+    self._observer_lock = threading.Lock()
     self._condition_variable = threading.Condition()
 
   def add_task(self, task):
@@ -70,7 +71,9 @@ class TaskManager(object):
     Returns:
       (num) : the number of tasks
     """
-    return len(self._tasks)
+    with self._condition_variable:
+      num = len(self._tasks)
+    return num
 
   def task_ready(self, task):
     """
@@ -87,9 +90,35 @@ class TaskManager(object):
       # notify waiting threads
       self._condition_variable.notify()
 
+  def task_started(self, task):
+    """
+    This is called when a Task has started execution
+
+    Args:
+      task (Task) : the task that completed
+    """
+
+    # notify observer
+    with self._observer_lock:
+      if 'task_started' in dir(self._observer):
+        self._observer.task_started(task)
+
+  def task_bypassed(self, task):
+    """
+    This is called when a Task has been bypassed
+
+    Args:
+      task (Task) : the task that bypassed
+    """
+
+    # notify observer
+    with self._observer_lock:
+      if 'task_bypassed' in dir(self._observer):
+        self._observer.task_bypassed(task)
+
   def task_completed(self, task):
     """
-    This is called by a Task when it has completed execution
+    This is called when a Task has completed execution
 
     Args:
       task (Task) : the task that completed
@@ -107,8 +136,9 @@ class TaskManager(object):
       self._condition_variable.notify()
 
     # pass info to the observer
-    if 'task_completed' in dir(self._observer):
-      self._observer.task_completed(task)
+    with self._observer_lock:
+      if 'task_completed' in dir(self._observer):
+        self._observer.task_completed(task)
 
   def task_error(self, task, errors):
     """
@@ -120,8 +150,9 @@ class TaskManager(object):
     """
 
     # pass info to the observer
-    if 'task_error' in dir(self._observer):
-      self._observer.task_error(task, errors)
+    with self._observer_lock:
+      if 'task_error' in dir(self._observer):
+        self._observer.task_error(task, errors)
 
     # kill
     os._exit(-1)  # pylint: disable=protected-access
@@ -145,8 +176,6 @@ class TaskManager(object):
 
     # run all tasks until there is none left
     while True:
-      next_task = None
-
       # use the condition variable for pausing/resuming
       with self._condition_variable:
         # check if we are done
@@ -169,8 +198,12 @@ class TaskManager(object):
                 task.priority > next_task.priority):
             next_task = task
 
-        # check if there enough resources to run the task
-        if self._resource_manager.task_starting(next_task) == False:
+        # check for task bypassing
+        bypass = next_task.bypass()
+
+        # if not being bypassed, check if there enough resources to run the task
+        if (not bypass and
+            self._resource_manager.task_starting(next_task) == False):
           self._condition_variable.wait()
           continue
 
@@ -178,12 +211,8 @@ class TaskManager(object):
         self._ready_tasks.remove(next_task)
         self._running_tasks.append(next_task)
 
-      # this indent escapes the condition variable lock
-      #  now run the next task
-
-      # notify observer
-      if 'task_starting' in dir(self._observer):
-        self._observer.task_starting(next_task)
+      # at this point, the next_task is either being bypassed or there is enough
+      #  resources to execute the task
 
       # run it
       next_task.start()

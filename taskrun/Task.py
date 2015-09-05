@@ -30,7 +30,6 @@ from __future__ import (absolute_import, division,
 import threading
 
 
-#pylint: disable=abstract-class-not-used
 class Task(threading.Thread):
   """
   This defines one task to be executed
@@ -54,6 +53,8 @@ class Task(threading.Thread):
     self._priority = None
     self._dependencies = []
     self._notifiees = []
+    self._conditions = []
+    self._bypass = None
 
   @property
   def priority(self):
@@ -112,9 +113,23 @@ class Task(threading.Thread):
       task (Task) : a task dependency
     """
 
-    if self is task:
-      raise ValueError('self dependency is not allowed')
+    # perform a cyclic dependency check (BFS checking for self)
+    visit = [task]
+    visited = set()
+    while len(visit) > 0:
+      curr = visit.pop()
+      if curr is self:
+        raise ValueError('cyclic dependency found')
+      else:
+        visited.add(curr)
+        for dep in curr._dependencies:  #pylint: disable=protected-access
+          if dep not in visited:
+            visit.append(dep)
+
+    # add the task as a dependency
     self._dependencies.append(task)
+
+    # add self to the task's notifiee list
     task.add_notifiee(self)
 
   def add_notifiee(self, notifiee):
@@ -133,6 +148,17 @@ class Task(threading.Thread):
     """
     return not self._dependencies # test for empty
 
+  def add_condition(self, condition):
+    """
+    Adds a condition to this task. Each condition is evaluated after all
+    dependencies have been met.
+
+    Args:
+      condition (Condition) : a condition for this task
+    """
+    self._conditions.append(condition)
+
+
   def task_completed(self, task):
     """
     Notification that a dependency has completed
@@ -145,25 +171,50 @@ class Task(threading.Thread):
     if not self._dependencies: # test for empty
       self._manager.task_ready(self)
 
+  def bypass(self):
+    """
+    Returns:
+      (bool) : True if the process should be bypassed,
+               False if it should execute
+    """
+
+    for condition in self._conditions:
+      if condition.check() != True:
+        self._bypass = True
+        return self._bypass
+    self._bypass = False
+    return self._bypass
+
   def run(self):
     """
-    Executes the task by calling its execute() function
+    This either executes the task of performs the bypass.
     """
 
     # execute the task
-    errors = None
-    try:
-      errors = self.execute()
-    except RuntimeError as ex:
-      errors = ex
+    assert self._bypass is not None, "bypass was never set"
+    if not self._bypass:
+      # notify the manager of start
+      self._manager.task_started(self)
 
-    # handle potential errors
-    if errors is not None:
-      self._manager.task_error(self, errors)  # aborts programs
+      # try to execute
+      errors = None
+      try:
+        errors = self.execute()
+      except RuntimeError as ex:
+        errors = ex
+
+      # handle potential errors
+      if errors is not None:
+        self._manager.task_error(self, errors)  # aborts programs
+
+    else:
+      # notify the manager of bypass
+      self._manager.task_bypassed(self)
 
     # inform the manager of task completion
     self._manager.task_completed(self)
-    # inform all notifiees of task completion
+
+    # inform all notifiees of task completion/bypass
     for notifiee in self._notifiees:
       notifiee.task_completed(self)
 
