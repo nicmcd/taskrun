@@ -2,6 +2,7 @@
 disable=locally-disabled,
 	too-many-branches,
 	too-many-instance-attributes,
+	too-many-return-statements,
 	abstract-class-not-used,
 	abstract-class-little-used
 

@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import os
+from .FailureMode import FailureMode
 import threading
 import time
 
@@ -37,7 +37,8 @@ class TaskManager(object):
   This class manages a group of tasks
   """
 
-  def __init__(self, resource_manager, observer):
+  def __init__(self, resource_manager=None, observer=None,
+               failure_mode=FailureMode.AGGRESSIVE_FAIL):
     """
     Constructs a TaskManager object
 
@@ -47,13 +48,14 @@ class TaskManager(object):
     """
 
     self._running = False
-    self._tasks = []
+    self._waiting_tasks = []
     self._ready_tasks = []
     self._running_tasks = []
+    self._filter_tasks = []
     self._resource_manager = resource_manager
     self._observer = observer
-    self._observer_lock = threading.Lock()
     self._condition_variable = threading.Condition()
+    self._failure_mode = FailureMode.create(failure_mode)
 
   def add_task(self, task):
     """
@@ -64,16 +66,19 @@ class TaskManager(object):
     """
 
     assert self._running == False
-    self._tasks.append(task)
+    self._waiting_tasks.append(task)
 
-  def num_tasks(self):
+  def _probe_ready(self):
     """
-    Returns:
-      (num) : the number of tasks
+    This method probes the waiting tasks to see if they are ready
     """
-    with self._condition_variable:
-      num = len(self._tasks)
-    return num
+    assert self._running == True
+    temp_ready = []
+    for task in self._waiting_tasks:
+      if task.ready():
+        temp_ready.append(task)
+    for task in temp_ready:
+      self.task_ready(task)
 
   def task_ready(self, task):
     """
@@ -83,9 +88,17 @@ class TaskManager(object):
       task (Task) : the task that is now ready to run
     """
 
+    assert self._running == True
     with self._condition_variable:
-      # add task to ready list
-      self._ready_tasks.append(task)
+      # check if this task is in the filter list
+      if task in self._filter_tasks:
+        assert task not in self._waiting_tasks
+        self._filter_tasks.remove(task)
+
+      else:
+        # transfer from waiting to ready list
+        self._waiting_tasks.remove(task)
+        self._ready_tasks.append(task)
 
       # notify waiting threads
       self._condition_variable.notify()
@@ -97,10 +110,11 @@ class TaskManager(object):
     Args:
       task (Task) : the task that completed
     """
+    assert self._running == True
 
     # notify observer
-    with self._observer_lock:
-      if 'task_started' in dir(self._observer):
+    if self._observer is not None:
+      with self._condition_variable:
         self._observer.task_started(task)
 
   def task_bypassed(self, task):
@@ -110,11 +124,15 @@ class TaskManager(object):
     Args:
       task (Task) : the task that bypassed
     """
+    assert self._running == True
 
-    # notify observer
-    with self._observer_lock:
-      if 'task_bypassed' in dir(self._observer):
+    with self._condition_variable:
+      # notify observer
+      if self._observer is not None:
         self._observer.task_bypassed(task)
+
+      # clean up the task
+      self._task_done(task)
 
   def task_completed(self, task):
     """
@@ -123,24 +141,17 @@ class TaskManager(object):
     Args:
       task (Task) : the task that completed
     """
+    assert self._running == True
 
     with self._condition_variable:
-      # remove task from lists
-      self._tasks.remove(task)
-      self._running_tasks.remove(task)
-
-      # give back resources
-      self._resource_manager.task_completed(task)
-
-      # notify waiting threads
-      self._condition_variable.notify()
-
-    # pass info to the observer
-    with self._observer_lock:
-      if 'task_completed' in dir(self._observer):
+      # pass info to the observer
+      if self._observer is not None:
         self._observer.task_completed(task)
 
-  def task_error(self, task, errors):
+      # clean up the task
+      self._task_done(task)
+
+  def task_failed(self, task, errors):
     """
     This function is called by a task when an error code is returned from
     the task
@@ -148,14 +159,85 @@ class TaskManager(object):
     Args:
       task (Task) : the task that encountered errors
     """
+    assert self._running == True
 
-    # pass info to the observer
-    with self._observer_lock:
-      if 'task_error' in dir(self._observer):
-        self._observer.task_error(task, errors)
+    # handle the failure
+    with self._condition_variable:
+      # handle failure based on failure mode
+      if self._failure_mode is FailureMode.AGGRESSIVE_FAIL:
+        # kill all the currently running tasks
+        if not task.killed:
+          for running_task in self._running_tasks:
+            if running_task is not task:
+              running_task.kill()
 
-    # kill
-    os._exit(-1)  # pylint: disable=protected-access
+        # clear out waiting and ready lists
+        self._filter_tasks.extend(self._waiting_tasks)
+        self._waiting_tasks = []
+        self._filter_tasks.extend(self._ready_tasks)
+        self._ready_tasks = []
+
+      elif self._failure_mode is FailureMode.PASSIVE_FAIL:
+        # clear out waiting and ready lists
+        self._filter_tasks.extend(self._waiting_tasks)
+        self._waiting_tasks = []
+        self._filter_tasks.extend(self._ready_tasks)
+        self._ready_tasks = []
+
+      elif self._failure_mode is FailureMode.ACTIVE_CONTINUE:
+        # remove all tasks that depend on this task (BFS)
+        visit = []
+        visit.extend(task.get_dependents())
+        visited = set()
+        while len(visit) > 0:
+          curr = visit.pop()
+          assert curr not in self._ready_tasks
+          assert curr not in self._running_tasks
+          visited.add(curr)
+          for dep in curr.get_dependents():
+            if dep not in visited:
+              visit.append(dep)
+          if curr in self._waiting_tasks:
+            self._waiting_tasks.remove(curr)
+            self._filter_tasks.append(curr)
+
+      elif self._failure_mode is FailureMode.BLIND_CONTINUE:
+        # do nothing
+        pass
+
+      else:
+        assert False, "programmer error, fire somebody!"
+
+      # pass info to the observer
+      if self._observer is not None:
+        self._observer.task_failed(task, errors)
+
+      # clean up the task
+      self._task_done(task)
+
+  def _task_done(self, task):
+    """
+    This method is called by task_completed and task_failed.
+    This method removes the task from the running list and gives back all
+    resources it consumed.
+
+    WARNING: this method must be called while locked on the condition variable
+
+    Args:
+      task (Task) : the task that finished
+    """
+    assert self._running == True
+
+    # remove task from running lists
+    self._running_tasks.remove(task)
+
+    # give back resources
+    if not task.bypass():
+      if self._resource_manager is not None:
+        self._resource_manager.task_done(task)
+
+    # notify waiting thread
+    self._condition_variable.notify()
 
   def run_tasks(self):
     """
@@ -165,29 +247,26 @@ class TaskManager(object):
     assert self._running == False
     self._running = True
 
-    # ignore empty call
-    if not self._tasks: # not empty check
-      return
-
     # ask the tasks if they are ready to run (find root tasks)
-    for task in self._tasks:
-      if task.ready():
-        self._ready_tasks.append(task)
+    self._probe_ready()
 
     # run all tasks until there is none left
     while True:
-      # use the condition variable for pausing/resuming
+      # use the condition variable for pausing/resuming and locking
       with self._condition_variable:
         # check if we are done
-        if len(self._tasks) == 0:
+        if (len(self._waiting_tasks) == 0 and
+            len(self._ready_tasks) == 0 and
+            len(self._running_tasks) == 0): # and
+            #len(self._filter_tasks) == 0):
           break
 
-        # wait for at least one ready task
+        # wait for a ready task
         if len(self._ready_tasks) == 0:
           self._condition_variable.wait()
           continue
 
-        # find the highest priority task
+        # find the highest priority task in FIFO order
         next_task = self._ready_tasks[0]
         for task in self._ready_tasks[1:]:
           if (next_task.priority is None and
@@ -203,11 +282,12 @@ class TaskManager(object):
 
         # if not being bypassed, check if there enough resources to run the task
         if (not bypass and
+            self._resource_manager is not None and
             self._resource_manager.task_starting(next_task) == False):
           self._condition_variable.wait()
           continue
 
-        # set to running (remove from ready, add to running)
+        # transfer from ready to running
         self._ready_tasks.remove(next_task)
         self._running_tasks.append(next_task)
 

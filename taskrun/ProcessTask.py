@@ -54,6 +54,7 @@ class ProcessTask(Task):
     self._stderr_file = None
     self.stdout = None
     self.stderr = None
+    self._proc = None
 
   @property
   def stdout_file(self):
@@ -119,11 +120,11 @@ class ProcessTask(Task):
       stderr_fd = subprocess.PIPE
 
     # execute the task command
-    proc = subprocess.Popen(self._command, stdout=stdout_fd, stderr=stderr_fd,
-                            shell=True)
+    self._proc = subprocess.Popen(self._command, stdout=stdout_fd,
+                                  stderr=stderr_fd, shell=True)
 
     # wait for the process to finish, collect output
-    self.stdout, self.stderr = proc.communicate()
+    self.stdout, self.stderr = self._proc.communicate()
     if self.stdout is not None:
       self.stdout = self.stdout.decode('utf-8')
     if self.stderr is not None:
@@ -138,8 +139,21 @@ class ProcessTask(Task):
       stderr_fd.close()
 
     # check the return code
-    ret = proc.returncode
+    ret = self._proc.returncode
     if ret == 0:
       return None
     else:
       return ret
+
+  def kill(self):
+    """
+    See Task.kill()
+    This implementation calls subprocess.kill()
+    """
+
+    self.killed = True
+
+    # there is a chance the proc hasn't been created yet or has already
+    #  completed
+    if self._proc:
+      self._proc.kill()

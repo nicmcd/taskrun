@@ -55,7 +55,7 @@ class FunctionTask(Task):
 
   def describe(self):
     """
-    See taskrun.Task.describe()
+    See Task.describe()
     """
 
     return "def {0}(args={1}, kwargs={2})".format(
@@ -63,7 +63,15 @@ class FunctionTask(Task):
 
   def execute(self):
     """
-    See taskrun.Task.execute()
+    See Task.execute()
     """
 
     return self._func(*self._args, **self._kwargs)
+
+  def kill(self):
+    """
+    See Task.kill()
+    This implementation actually ignores this because it can't kill the function
+    call once it has already been made.
+    """
+    self.killed = True

@@ -52,9 +52,11 @@ class Task(threading.Thread):
     self._resources = {}
     self._priority = None
     self._dependencies = []
-    self._notifiees = []
+    self._dependents = []
     self._conditions = []
     self._bypass = None
+    self._errors = None
+    self.killed = False
 
   @property
   def priority(self):
@@ -105,6 +107,13 @@ class Task(threading.Thread):
     else:
       return None
 
+  def get_dependencies(self):
+    """
+    Returns:
+      (list) : the list of dependencies
+    """
+    return self._dependencies
+
   def add_dependency(self, task):
     """
     Adds a dependency task to this task
@@ -127,19 +136,27 @@ class Task(threading.Thread):
             visit.append(dep)
 
     # add the task as a dependency
+    assert task not in self._dependencies
     self._dependencies.append(task)
 
-    # add self to the task's notifiee list
-    task.add_notifiee(self)
+    # add self to the task's dependent list
+    task.add_dependent(self)
 
-  def add_notifiee(self, notifiee):
+  def get_dependents(self):
     """
-    Adds a notifiee to the list
+    Returns:
+      (list) : the list of dependents
+    """
+    return self._dependents
+
+  def add_dependent(self, dependent):
+    """
+    Adds a dependent to the list
 
     Args:
-      notifiee (Task) : a task to be notified when this one completes
+      dependent (Task) : a task to be notified when this one completes
     """
-    self._notifiees.append(notifiee)
+    self._dependents.append(dependent)
 
   def ready(self):
     """
@@ -159,16 +176,16 @@ class Task(threading.Thread):
     self._conditions.append(condition)
 
 
-  def task_completed(self, task):
+  def task_done(self, task):
     """
-    Notification that a dependency has completed
+    Notification that a dependency is now done
 
     Args:
-      task (Task) : the task that completed
+      task (Task) : the task that is now done
     """
 
     self._dependencies.remove(task)
-    if not self._dependencies: # test for empty
+    if len(self._dependencies) == 0:
       self._manager.task_ready(self)
 
   def bypass(self):
@@ -178,12 +195,15 @@ class Task(threading.Thread):
                False if it should execute
     """
 
-    for condition in self._conditions:
-      if condition.check() != True:
-        self._bypass = True
-        return self._bypass
-    self._bypass = False
-    return self._bypass
+    if self._bypass is None:
+      for condition in self._conditions:
+        if condition.check() != True:
+          self._bypass = True
+          return self._bypass
+      self._bypass = False
+      return self._bypass
+    else:
+      return self._bypass
 
   def run(self):
     """
@@ -197,33 +217,31 @@ class Task(threading.Thread):
       self._manager.task_started(self)
 
       # try to execute
-      errors = None
       try:
-        errors = self.execute()
+        self._errors = self.execute()
       except RuntimeError as ex:
-        errors = ex
+        self._errors = ex
 
-      # handle potential errors
-      if errors is not None:
-        self._manager.task_error(self, errors)  # aborts programs
+      # report to the task manager
+      if self._errors is None:
+        self._manager.task_completed(self)
+      else:
+        self._manager.task_failed(self, self._errors)
 
     else:
       # notify the manager of bypass
       self._manager.task_bypassed(self)
 
-    # inform the manager of task completion
-    self._manager.task_completed(self)
-
-    # inform all notifiees of task completion/bypass
-    for notifiee in self._notifiees:
-      notifiee.task_completed(self)
+    # inform all dependents of task completion/bypass
+    for dependent in self._dependents:
+      dependent.task_done(self)
 
   def describe(self):
     """
     Returns:
       (str) : a description of this task (not the name)
     """
-    raise NotImplementedError("subclasses should override this!")
+    raise NotImplementedError('subclasses should override this!')
 
   def execute(self):
     """
@@ -232,4 +250,13 @@ class Task(threading.Thread):
     Returns:
       (None or errors) : None for success, errors on failure
     """
-    raise NotImplementedError("subclasses should override this!")
+    raise NotImplementedError('subclasses should override this!')
+
+  def kill(self):
+    """
+    Kills this task. This may or may not be possible, but when it is, it must be
+    immediately carryied out.
+
+    WARNING: subclass implementations must set self.killed = True
+    """
+    raise NotImplementedError('subclasses should override this!')

@@ -27,7 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import threading
 
 
 class ResourceManager(object):
@@ -44,7 +43,6 @@ class ResourceManager(object):
     """
 
     self._resources = args
-    self._access_lock = threading.Lock()
 
   def can_run(self, task):
     """
@@ -54,9 +52,7 @@ class ResourceManager(object):
       task (Task) : the task under question
     """
 
-    # lock access
     res = True
-    self._access_lock.acquire()
 
     # verify for all resources
     for resource in self._resources:
@@ -67,16 +63,15 @@ class ResourceManager(object):
 
       # check if there is enough resource left
       if consumes > resource.total:
-        raise RuntimeError('task \'{0}\' consumes {1} units of resource \'{2}\''
-                           ' but there is only {3} units total'
-                           .format(task.name, consumes, resource.name,
-                                   resource.total))
+        raise ValueError('task \'{0}\' consumes {1} units of resource \'{2}\''
+                         ' but there is only {3} units total'
+                         .format(task.name, consumes, resource.name,
+                                 resource.total))
       elif resource.amount < consumes:
         res = False
         break
 
     # release access and return
-    self._access_lock.release()
     return res
 
   def task_starting(self, task):
@@ -89,9 +84,7 @@ class ResourceManager(object):
       task (Task) : the task under question
     """
 
-    # lock access
     res = True
-    self._access_lock.acquire()
 
     # check all resources
     for resource in self._resources:
@@ -102,10 +95,10 @@ class ResourceManager(object):
 
       # check if there is enough resource left
       if consumes > resource.total:
-        raise RuntimeError('task \'{0}\' consumes {1} units of resource \'{2}\''
-                           ' but there is only {3} units total'
-                           .format(task.name, consumes, resource.name,
-                                   resource.total))
+        raise ValueError('task \'{0}\' consumes {1} units of resource \'{2}\''
+                         ' but there is only {3} units total'
+                         .format(task.name, consumes, resource.name,
+                                 resource.total))
       elif resource.amount < consumes:
         res = False
         break
@@ -122,19 +115,15 @@ class ResourceManager(object):
         resource.amount -= consumes
 
     # release access and return
-    self._access_lock.release()
     return res
 
-  def task_completed(self, task):
+  def task_done(self, task):
     """
     Gives back the resources consumed by a task
 
     Args:
       task (Task) : the task under question
     """
-
-    # lock access
-    self._access_lock.acquire()
 
     # increment all resources
     for resource in self._resources:
@@ -145,6 +134,3 @@ class ResourceManager(object):
 
       # increment resource
       resource.amount += consumes
-
-    # release access and return
-    self._access_lock.release()

@@ -27,15 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import sys
-
-# conditionally import the termcolor package, it's OK if it doesn't exist
-try:
-  USE_TERM_COLOR = True
-  from termcolor import colored
-except ImportError:
-  USE_TERM_COLOR = False
-USE_TERM_COLOR &= sys.stdout.isatty()
 
 
 class Observer(object):
@@ -45,20 +36,11 @@ class Observer(object):
   monitor observance of tasks starting and completing.
   """
 
-  def __init__(self, show_started=True, show_bypassed=True,
-               show_completed=True, show_error=True):
+  def __init__(self):
     """
-    Constructs an Observer
-
-    Args:
-      show_started (bool)   : print description when tasks start
-      show_bypassed (bool)  : print description when tasks bypass
-      show_completed (bool) : print description when tasks complete
+    Constructs an Observer object
     """
-    self._show_started = show_started
-    self._show_bypassed = show_bypassed
-    self._show_completed = show_completed
-    self._show_error = show_error
+    pass
 
   def task_started(self, task):
     """
@@ -67,12 +49,7 @@ class Observer(object):
     Args:
       task (Task): the task that is now starting
     """
-
-    if self._show_started:
-      # format the output string
-      text = "[Started '" + task.name + "'] " + task.describe()
-      # print
-      print(text)
+    raise NotImplementedError('subclasses must override this')
 
   def task_bypassed(self, task):
     """
@@ -81,12 +58,7 @@ class Observer(object):
     Args:
       task (Task): the task that is bypassed
     """
-
-    if self._show_bypassed:
-      # format the output string
-      text = "[Bypassed '" + task.name + "'] " + task.describe()
-      # print
-      print(text)
+    raise NotImplementedError('subclasses must override this')
 
   def task_completed(self, task):
     """
@@ -95,29 +67,13 @@ class Observer(object):
     Args:
       task (Task): the task that completed
     """
+    raise NotImplementedError('subclasses must override this')
 
-    if self._show_completed:
-      # format the output string
-      text = "[Completed '" + task.name + "'] " + task.describe()
-      # print
-      print(text)
-
-  def task_error(self, task, errors):
+  def task_failed(self, task, errors):
     """
     Notification of task failure
 
     Args:
       task (Task): the task that failed
     """
-
-    if self._show_error:
-      # format the output string
-      text = "[" + task.name + "] ERROR: " + task.describe()
-      if type(errors) == int:
-        text += "\n  Return: " + str(errors)
-      else:
-        text += "\n  Message: " + str(errors)
-      if USE_TERM_COLOR:
-        text = colored(text, 'red')
-      # print
-      print(text)
+    raise NotImplementedError('subclasses must override this')
