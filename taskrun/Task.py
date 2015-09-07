@@ -213,9 +213,6 @@ class Task(threading.Thread):
     # execute the task
     assert self._bypass is not None, "bypass was never set"
     if not self._bypass:
-      # notify the manager of start
-      self._manager.task_started(self)
-
       # try to execute
       try:
         self._errors = self.execute()
@@ -227,10 +224,6 @@ class Task(threading.Thread):
         self._manager.task_completed(self)
       else:
         self._manager.task_failed(self, self._errors)
-
-    else:
-      # notify the manager of bypass
-      self._manager.task_bypassed(self)
 
     # inform all dependents of task completion/bypass
     for dependent in self._dependents:

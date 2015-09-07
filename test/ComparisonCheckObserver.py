@@ -12,7 +12,7 @@ class ComparisonCheckObserver(taskrun.Observer):
     self._verbose = verbose
 
   def reinit(self, events, comparisons):
-    assert len(actual) == 0
+    assert len(self._actual) == 0
     self._events = events
     self._comparisons = comparisons
 
@@ -37,32 +37,27 @@ class ComparisonCheckObserver(taskrun.Observer):
 
   def ok(self):
     if self._events != 0:
-      if self._verbose:
-        print('events count is {0}'.format(self._events))
+      print('ERROR: events count is {0}'.format(self._events))
       return False
     for comparison in self._comparisons:
       elements = comparison.split()
       assert len(elements) >= 3
       curr = elements[0]
       if curr not in self._actual:
-        if self._verbose:
-          print('{0} didn\'t occur'.format(curr))
+        print('{0} didn\'t occur'.format(curr))
         return False
       comp = elements[1]
       for other in elements[2:]:
         if other not in self._actual:
-          if self._verbose:
-            print('{0} didn\'t occur'.format(other))
+          print('{0} didn\'t occur'.format(other))
           return False
         if comp == '<':
           if not self._actual[curr] < self._actual[other]:
-            if self._verbose:
-              print('failure: {0}'.format(comparison))
+            print('failure: {0}'.format(comparison))
             return False
         elif comp == '>':
           if not self._actual[curr] > self._actual[other]:
-            if self._verbose:
-              print('failure: {0}'.format(comparison))
+            print('failure: {0}'.format(comparison))
             return False
         else:
           assert False

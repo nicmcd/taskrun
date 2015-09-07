@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import multiprocessing
+import os
 import sys
 import time
 
@@ -10,7 +11,10 @@ def func():
   pass
 
 num = 3000
-tm = taskrun.TaskManager()
+cpus = os.cpu_count()
+assert cpus > 0
+rm = taskrun.ResourceManager(taskrun.Resource('cpu', 1, cpus))
+tm = taskrun.TaskManager(resource_manager=rm)
 
 start = time.clock()
 for idx in range(num):

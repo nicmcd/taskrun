@@ -103,9 +103,11 @@ class TaskManager(object):
       # notify waiting threads
       self._condition_variable.notify()
 
-  def task_started(self, task):
+  def _task_started(self, task):
     """
     This is called when a Task has started execution
+
+    WARNING: this method must be called while locked on the condition variable
 
     Args:
       task (Task) : the task that completed
@@ -114,25 +116,25 @@ class TaskManager(object):
 
     # notify observer
     if self._observer is not None:
-      with self._condition_variable:
-        self._observer.task_started(task)
+      self._observer.task_started(task)
 
-  def task_bypassed(self, task):
+  def _task_bypassed(self, task):
     """
     This is called when a Task has been bypassed
+
+    WARNING: this method must be called while locked on the condition variable
 
     Args:
       task (Task) : the task that bypassed
     """
     assert self._running == True
 
-    with self._condition_variable:
-      # notify observer
-      if self._observer is not None:
-        self._observer.task_bypassed(task)
+    # notify observer
+    if self._observer is not None:
+      self._observer.task_bypassed(task)
 
-      # clean up the task
-      self._task_done(task)
+    # clean up the task
+    self._task_done(task)
 
   def task_completed(self, task):
     """
@@ -290,6 +292,12 @@ class TaskManager(object):
         # transfer from ready to running
         self._ready_tasks.remove(next_task)
         self._running_tasks.append(next_task)
+
+        # signal started or bypassed
+        if not bypass:
+          self._task_started(next_task)
+        else:
+          self._task_bypassed(next_task)
 
       # at this point, the next_task is either being bypassed or there is enough
       #  resources to execute the task

@@ -1,6 +1,7 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
+from .ComparisonCheckObserver import ComparisonCheckObserver
 from .OrderCheckObserver import OrderCheckObserver
 import unittest
 import taskrun
@@ -92,7 +93,12 @@ class ResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.Resource('core', 9999, 4),
       taskrun.Resource('mem', 9999, 8000))
-    ob = OrderCheckObserver('+t1 +t2 +t3 +t4 -t4 -t3 -t2 -t1'.split())
+    ob = ComparisonCheckObserver(8,
+                                 ['+t1 < +t2 +t3 +t4 -t4 -t3 -t2 -t1',
+                                  '+t2 < +t3 +t4 -t4 -t3 -t2 -t1',
+                                  '+t3 < +t4 -t4 -t3 -t2 -t1',
+                                  '+t4 < -t4 -t3 -t2 -t1'],
+                                 verbose=False)
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.04')
     t1.resources = {'core': 1, 'mem': 0}
@@ -113,7 +119,12 @@ class ResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.Resource('core', 9999, 4),
       taskrun.Resource('mem', 9999, 8000))
-    ob = OrderCheckObserver('+t1 +t2 +t3 +t4 -t1 -t2 -t3 -t4'.split())
+    ob = ComparisonCheckObserver(8,
+                                 ['+t1 < +t2 +t3 +t4 -t4 -t3 -t2 -t1',
+                                  '+t2 < +t3 +t4 -t4 -t3 -t2 -t1',
+                                  '+t3 < +t4 -t4 -t3 -t2 -t1',
+                                  '+t4 < -t4 -t3 -t2 -t1'],
+                                 verbose=False)
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
     t1.resources = {'core': 1, 'mem': 0}

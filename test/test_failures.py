@@ -165,10 +165,9 @@ class FailuresTestCase(unittest.TestCase):
                                   '+t4 > +t3 +t2 +t1',
                                   '+t4 < !t3 -t4 -t2 -t1',
                                   '!t3 > +t4 +t3 +t2 +t1',
-                                  '!t3 < -t4 -t2 -t1',
-                                  '-t4 > !t3 +t4 +t3 +t2 +t1',
-                                  '-t2 > !t3 +t4 +t3 +t2 +t1',
-                                  '-t1 > !t3 +t4 +t3 +t2 +t1'],
+                                  '-t4 > +t4 +t3 +t2 +t1',
+                                  '-t2 > +t4 +t3 +t2 +t1',
+                                  '-t1 > +t4 +t3 +t2 +t1'],
                                  verbose=False)
     tm = taskrun.TaskManager(observer=ob, failure_mode='active_continue')
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.04')

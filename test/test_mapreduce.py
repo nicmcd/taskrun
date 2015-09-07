@@ -11,15 +11,15 @@ import taskrun
 rnd = random.Random()
 rnd.seed()
 
-def rsleep(m):
+def rsleep(m=0.05):
   return 'sleep {0}'.format(rnd.random() * m)
 
 class MapReduceTestCase(unittest.TestCase):
-  def text_mapreduce(self):
+  def test_mapreduce(self):
     vcs = numpy.arange(1, 8+1, 1)
     rates = numpy.arange(5, 100+1, 5)
 
-    ob = ComparisonCheckObserver(0, [])
+    ob = ComparisonCheckObserver(0, [], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
 
     # build all tasks
@@ -38,14 +38,55 @@ class MapReduceTestCase(unittest.TestCase):
         worker.add_dependency(map_vc)
         reduce_vc.add_dependency(worker)
 
-
     # build comparison list
+    comps = []
+    count = 0
+    m_s_lt = '+M < -M +R -R '
+    m_e_lt = '-M < +R -R '
+    r_s_gt = '+R > +M -M '
+    r_e_gt = '-R > +R +M -M '
 
+    for vc in vcs:
+      m_s_lt += '+M_{0} -M_{0} '.format(vc)
+      m_e_lt += '+M_{0} -M_{0} '.format(vc)
+      r_s_gt += '+M_{0} -M_{0} '.format(vc)
+      r_e_gt += '+M_{0} -M_{0} '.format(vc)
 
+      mv_s_lt = '+M_{0} < -M_{0} +R -R '.format(vc)
+      mv_e_lt = '-M_{0} < +R -R '.format(vc)
+      rv_e_gt = '+R_{0} > +M -M '.format(vc)
+      rv_s_gt = '-R_{0} > +R_{0} +M -M '.format(vc)
 
+      for rate in rates:
+        m_s_lt += '+W_{0}_{1} -W_{0}_{1} '.format(vc, rate)
+        m_e_lt += '+W_{0}_{1} -W_{0}_{1} '.format(vc, rate)
+        r_e_gt += '+W_{0}_{1} -W_{0}_{1} '.format(vc, rate)
+        r_s_gt += '+W_{0}_{1} -W_{0}_{1} '.format(vc, rate)
 
+        mv_s_lt += '+W_{0}_{1} -W_{0}_{1} '.format(vc, rate)
+        mv_e_lt += '+W_{0}_{1} -W_{0}_{1} '.format(vc, rate)
+        rv_e_gt += '+W_{0}_{1} -W_{0}_{1} '.format(vc, rate)
+        rv_s_gt += '+W_{0}_{1} -W_{0}_{1} '.format(vc, rate)
 
+        w_e_lt = '+W_{0}_{1} < -W_{0}_{1} +R -R '.format(vc, rate)
+        w_s_lt = '-W_{0}_{1} < +R -R '.format(vc, rate)
+        comps.append(w_s_lt)
+        comps.append(w_e_lt)
+        count += 2
+      comps.append(mv_s_lt)
+      comps.append(mv_e_lt)
+      comps.append(rv_s_gt)
+      comps.append(rv_e_gt)
+      count += 4
+    comps.append(m_s_lt)
+    comps.append(m_e_lt)
+    comps.append(r_s_gt)
+    comps.append(r_e_gt)
+    count += 4
 
+    # re-init the observer
+    ob.reinit(count, comps)
 
-
-  # CHANGE TEXT TO TEST
+    # run and check
+    tm.run_tasks()
+    self.assertTrue(ob.ok())
