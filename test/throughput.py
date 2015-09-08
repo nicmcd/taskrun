@@ -7,8 +7,15 @@ import time
 
 import taskrun
 
-def func():
-  pass
+def func(first, second, *args, **kwargs):
+  assert first == 'you'
+  assert second == 'me'
+  assert len(args) == 1
+  assert args[0] == 'yall'
+  assert 'mom' in kwargs
+  assert kwargs['mom'] == True
+  assert 'dad' in kwargs
+  assert kwargs['dad'] == False
 
 num = 3000
 cpus = os.cpu_count()
@@ -16,6 +23,7 @@ assert cpus > 0
 rm = taskrun.ResourceManager(taskrun.Resource('cpu', 1, cpus))
 tm = taskrun.TaskManager(resource_manager=rm)
 
+# Process task
 start = time.clock()
 for idx in range(num):
   taskrun.ProcessTask(tm, 'Task_{0:04d}'.format(idx), '')
@@ -30,9 +38,11 @@ elapsed = stop - start
 print('ProcessTasks per second = {0:.3f}'
       .format(num / elapsed))
 
+# Function task
 start = time.clock()
 for idx in range(num):
-  taskrun.FunctionTask(tm, 'Task_{0:04d}'.format(idx), func)
+  taskrun.FunctionTask(tm, 'Task_{0:04d}'.format(idx),
+                       func, 'you', 'me', 'yall', mom=True, dad=False)
 stop = time.clock()
 elapsed = stop - start
 print('setup time: {0}'.format(elapsed))
@@ -42,4 +52,19 @@ tm.run_tasks()
 stop = time.clock()
 elapsed = stop - start
 print('FunctionTasks per second = {0:.3f}'
+      .format(num / elapsed))
+
+# Nop task
+start = time.clock()
+for idx in range(num):
+  taskrun.NopTask(tm, 'Task_{0:04d}'.format(idx))
+stop = time.clock()
+elapsed = stop - start
+print('setup time: {0}'.format(elapsed))
+
+start = time.clock()
+tm.run_tasks()
+stop = time.clock()
+elapsed = stop - start
+print('NopTasks per second = {0:.3f}'
       .format(num / elapsed))

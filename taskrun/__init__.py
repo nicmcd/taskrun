@@ -6,6 +6,7 @@ from .FileChangedDatabase import FileChangedDatabase
 from .FileCondition import FileCondition
 from .FunctionCondition import FunctionCondition
 from .FunctionTask import FunctionTask
+from .NopTask import NopTask
 from .Observer import Observer
 from .ProcessTask import ProcessTask
 from .Resource import Resource

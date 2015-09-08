@@ -31,47 +31,37 @@ from __future__ import (absolute_import, division,
 from .Task import Task
 
 
-class FunctionTask(Task):
+class NopTask(Task):
   """
-  This class is a Task that runs as a function call
+  This class is a Task that does nothing (No Operation)
   """
 
-  def __init__(self, manager, name, func, *args, **kwargs):
+  def __init__(self, manager, name):
     """
-    This instiates a FunctionTask object with a function and arguments
+    This instiates a NopTask object
 
     Args:
       manager (TaskManager) : passed to Task.__init__()
       name (str)            : passed to Task.__init__()
-      func (function)       : the function to be executed
-      *args                 : passed to func when executed
-      **kwargs              : passed to func when executed
     """
 
-    super(FunctionTask, self).__init__(manager, name)
-    self._func = func
-    self._args = args
-    self._kwargs = kwargs
+    super(NopTask, self).__init__(manager, name)
 
   def describe(self):
     """
     See Task.describe()
     """
-
-    return 'def {0}(args={1}, kwargs={2})'.format(
-      self._func.__name__, self._args, self._kwargs)
+    return 'nop'
 
   def execute(self):
     """
     See Task.execute()
     """
-
-    return self._func(*self._args, **self._kwargs)
+    pass
 
   def kill(self):
     """
     See Task.kill()
-    This implementation ignores this because it can't kill the function
-    call once it has already been made.
+    This implementation ignores this because there is nothing to kill!
     """
     self.killed = True
