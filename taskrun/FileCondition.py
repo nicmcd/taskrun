@@ -28,27 +28,47 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 from .Condition import Condition
+import os
 
 
-class FunctionCondition(Condition):
+class FileCondition(Condition):
   """
-  This class uses a function pointer to check whether a task should run
+  This class uses lists of files to determine if a task should run. This
+  condition takes a set of input files that are file based dependencies. This
+  condition will have the task run if any of the files have changed since the
+  last time. This condition takes a set of output files which the task would
+  create or modify if it ran. This condition will have the task run if any of
+  these files do not exist.
   """
 
-  def __init__(self, func, *args, **kwargs):
+  def __init__(self, filedb, inputs, outputs):
     """
-    Constructs a FunctionCondition object
-    """
+    This constructs a FileCondition object
 
-    super(FunctionCondition, self).__init__()
-    self._func = func
-    self._args = args
-    self._kwargs = kwargs
+    Args:
+      filedb (FileChangedDatabase) : a file database for checking file status
+      inputs (list<str>)           : a list of filenames for the input files
+      outputs (list<str>)          : a list of filenames for the output files
+    """
+    super(FileCondition, self).__init__()
+    self._filedb = filedb
+    self._inputs = inputs
+    self._outputs = outputs
 
   def check(self):
     """
-    Calls the func(args, kwargs) to see if the task should execute
-    Anything except True is interpreted as False
+    See Condition.check()
+    This implementation will return True if any of the output files do not exist
+    or if the input files have changed
     """
-
-    return self._func(self._args, self._kwargs) == True
+    ret = False
+    for ofile in self._outputs:
+      if not os.path.isfile(ofile):
+        ret = True
+        break
+    if not ret:
+      for ifile in self._inputs:
+        if self._filedb.changed(ifile):
+          ret = True
+          break
+    return ret

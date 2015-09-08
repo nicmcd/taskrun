@@ -2,6 +2,8 @@
 
 from .Condition import Condition
 from .FailureMode import FailureMode
+from .FileChangedDatabase import FileChangedDatabase
+from .FileCondition import FileCondition
 from .FunctionCondition import FunctionCondition
 from .FunctionTask import FunctionTask
 from .Observer import Observer
