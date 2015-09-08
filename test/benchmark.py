@@ -24,47 +24,50 @@ rm = taskrun.ResourceManager(taskrun.Resource('cpu', 1, cpus))
 tm = taskrun.TaskManager(resource_manager=rm)
 
 # Process task
+print('\nProcessTask:')
 start = time.clock()
 for idx in range(num):
   taskrun.ProcessTask(tm, 'Task_{0:04d}'.format(idx), '')
 stop = time.clock()
 elapsed = stop - start
-print('setup time: {0}'.format(elapsed))
+print('setup time: {0:.3f}s'.format(elapsed))
 
 start = time.clock()
 tm.run_tasks()
 stop = time.clock()
 elapsed = stop - start
-print('ProcessTasks per second = {0:.3f}'
+print('tasks per second = {0:.3f}'
       .format(num / elapsed))
 
 # Function task
+print('\nFunctionTask:')
 start = time.clock()
 for idx in range(num):
   taskrun.FunctionTask(tm, 'Task_{0:04d}'.format(idx),
                        func, 'you', 'me', 'yall', mom=True, dad=False)
 stop = time.clock()
 elapsed = stop - start
-print('setup time: {0}'.format(elapsed))
+print('setup time: {0:.3f}s'.format(elapsed))
 
 start = time.clock()
 tm.run_tasks()
 stop = time.clock()
 elapsed = stop - start
-print('FunctionTasks per second = {0:.3f}'
+print('tasks per second = {0:.3f}'
       .format(num / elapsed))
 
 # Nop task
+print('\nNopTask:')
 start = time.clock()
 for idx in range(num):
   taskrun.NopTask(tm, 'Task_{0:04d}'.format(idx))
 stop = time.clock()
 elapsed = stop - start
-print('setup time: {0}'.format(elapsed))
+print('setup time: {0:.3f}s'.format(elapsed))
 
 start = time.clock()
 tm.run_tasks()
 stop = time.clock()
 elapsed = stop - start
-print('NopTasks per second = {0:.3f}'
+print('tasks per second = {0:.3f}'
       .format(num / elapsed))

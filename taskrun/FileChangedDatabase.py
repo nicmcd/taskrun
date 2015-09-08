@@ -89,12 +89,12 @@ class FileChangedDatabase(object):
     """
     with self._lock:
       with open(self._filename, 'w') as ofile:
-        for file in self._files:
+        for filename in self._files:
           hasher = self._hash_const()
-          with open(file, 'r') as ifile:
+          with open(filename, 'r') as ifile:
             hasher.update(ifile.read().encode('utf-8'))
           digest = hasher.hexdigest()
-          print('{0} {1}'.format(file, digest), file=ofile)
+          print('{0} {1}'.format(filename, digest), file=ofile)
 
   def changed(self, filename):
     """

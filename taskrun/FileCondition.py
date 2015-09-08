@@ -61,14 +61,13 @@ class FileCondition(Condition):
     This implementation will return True if any of the output files do not exist
     or if the input files have changed
     """
+
+    # don't make fast fail decisions, changed() needs to be called on all inputs
     ret = False
     for ofile in self._outputs:
       if not os.path.isfile(ofile):
         ret = True
-        break
-    if not ret:
-      for ifile in self._inputs:
-        if self._filedb.changed(ifile):
-          ret = True
-          break
+    for ifile in self._inputs:
+      if self._filedb.changed(ifile):
+        ret = True
     return ret

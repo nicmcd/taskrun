@@ -1,8 +1,8 @@
 .SUFFIXES:
-.PHONY: help install clean lint test
+.PHONY: help install clean lint test benchmark
 
 help:
-	@echo "options are: install clean lint test"
+	@echo "options are: install clean lint test benchmark"
 
 install:
 	python3 setup.py install --user
@@ -15,3 +15,6 @@ lint:
 
 test:
 	python3 -m unittest -v -f
+
+benchmark:
+	python3 test/benchmark.py

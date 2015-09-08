@@ -75,6 +75,7 @@ class FileChangedDatabaseTestCase(unittest.TestCase):
     os.remove(dbpath)
     os.remove(file1)
     os.remove(file2)
+    os.remove(file3)
 
   def test_md5(self):
     self._db_tester('md5')
