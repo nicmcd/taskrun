@@ -24,7 +24,7 @@ rm = taskrun.ResourceManager(taskrun.Resource('cpu', 1, cpus))
 tm = taskrun.TaskManager(resource_manager=rm)
 
 # Process task
-print('\nProcessTask:')
+print('\n*** ProcessTask ***')
 start = time.clock()
 for idx in range(num):
   taskrun.ProcessTask(tm, 'Task_{0:04d}'.format(idx), '')
@@ -36,11 +36,11 @@ start = time.clock()
 tm.run_tasks()
 stop = time.clock()
 elapsed = stop - start
-print('tasks per second = {0:.3f}'
+print('tasks per second: {0:.3f}'
       .format(num / elapsed))
 
 # Function task
-print('\nFunctionTask:')
+print('\n*** FunctionTask ***')
 start = time.clock()
 for idx in range(num):
   taskrun.FunctionTask(tm, 'Task_{0:04d}'.format(idx),
@@ -53,11 +53,11 @@ start = time.clock()
 tm.run_tasks()
 stop = time.clock()
 elapsed = stop - start
-print('tasks per second = {0:.3f}'
+print('tasks per second: {0:.3f}'
       .format(num / elapsed))
 
 # Nop task
-print('\nNopTask:')
+print('\n*** NopTask ***')
 start = time.clock()
 for idx in range(num):
   taskrun.NopTask(tm, 'Task_{0:04d}'.format(idx))
@@ -69,5 +69,5 @@ start = time.clock()
 tm.run_tasks()
 stop = time.clock()
 elapsed = stop - start
-print('tasks per second = {0:.3f}'
+print('tasks per second: {0:.3f}'
       .format(num / elapsed))
