@@ -1,8 +1,8 @@
 .SUFFIXES:
-.PHONY: help install clean lint test benchmark
+.PHONY: help install clean lint test benchmark count
 
 help:
-	@echo "options are: install clean lint test benchmark"
+	@echo "options are: install clean lint test benchmark count"
 
 install:
 	python3 setup.py install --user
@@ -18,3 +18,10 @@ test:
 
 benchmark:
 	python3 test/benchmark.py
+
+count:
+	@echo "taskrun/ - "$(shell echo taskrun/*.py | wc -w)" files"
+	@wc taskrun/*.py | sort -n -k1
+	@echo ""
+	@echo "test/ - "$(shell echo test/*.py | wc -w)" files"
+	@wc test/*.py | sort -n -k1
