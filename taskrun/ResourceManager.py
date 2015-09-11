@@ -44,93 +44,43 @@ class ResourceManager(object):
 
     self._resources = args
 
-  def can_run(self, task):
+  def can_start(self, task):
     """
-    Determines if a task can run
+    Determines if a task can start
 
     Args:
       task (Task) : the task under question
     """
-
-    res = True
-
-    # verify for all resources
     for resource in self._resources:
-      # get consumption by task
-      consumes = task.resource(resource.name)
-      if consumes is None:
-        consumes = resource.default
+      if not resource.can_use(task):
+        return False
+    return True
 
-      # check if there is enough resource left
-      if consumes > resource.total:
-        raise ValueError('task \'{0}\' consumes {1} units of resource \'{2}\''
-                         ' but there is only {3} units total'
-                         .format(task.name, consumes, resource.name,
-                                 resource.total))
-      elif resource.amount < consumes:
-        res = False
-        break
-
-    # release access and return
-    return res
-
-  def task_starting(self, task):
+  def start(self, task):
     """
-    Attempts to allow a task to start. This is essentially the same as
-    can_run() except that when successful, it decrements the corresponding
-    resources.
+    This method calls can_start() to see if the task can start. If successful,
+    it then uses the resoures.
 
     Args:
       task (Task) : the task under question
+
+    Returns:
+      (bool) : True on success, False otherwise
     """
-
-    res = True
-
-    # check all resources
-    for resource in self._resources:
-      # get consumption by task
-      consumes = task.resource(resource.name)
-      if consumes is None:
-        consumes = resource.default
-
-      # check if there is enough resource left
-      if consumes > resource.total:
-        raise ValueError('task \'{0}\' consumes {1} units of resource \'{2}\''
-                         ' but there is only {3} units total'
-                         .format(task.name, consumes, resource.name,
-                                 resource.total))
-      elif resource.amount < consumes:
-        res = False
-        break
-
-    # if can start, decrement resources
-    if res == True:
+    if self.can_start(task):
       for resource in self._resources:
-        # get consumption by task
-        consumes = task.resource(resource.name)
-        if consumes is None:
-          consumes = resource.default
+        res = resource.use(task)
+        assert res
+      return True
+    else:
+      return False
 
-        # decrement resource
-        resource.amount -= consumes
-
-    # release access and return
-    return res
-
-  def task_done(self, task):
+  def done(self, task):
     """
-    Gives back the resources consumed by a task
+    Gives back the resources used by a task
 
     Args:
       task (Task) : the task under question
     """
-
-    # increment all resources
     for resource in self._resources:
-      # get consumption by task
-      consumes = task.resource(resource.name)
-      if consumes is None:
-        consumes = resource.default
-
-      # increment resource
-      resource.amount += consumes
+      resource.release(task)

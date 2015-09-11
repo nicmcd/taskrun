@@ -10,8 +10,8 @@ import taskrun
 class ResourcesTestCase(unittest.TestCase):
   def test_res1(self):
     rm = taskrun.ResourceManager(
-      taskrun.Resource('core', 9999, 4),
-      taskrun.Resource('mem', 9999, 8000))
+      taskrun.CounterResource('core', 9999, 4),
+      taskrun.CounterResource('mem', 9999, 8000))
     tm = taskrun.TaskManager(rm, None)
     t1 = taskrun.ProcessTask(tm, 't1', '')
     with self.assertRaises(ValueError):
@@ -19,8 +19,8 @@ class ResourcesTestCase(unittest.TestCase):
 
   def test_res2(self):
     rm = taskrun.ResourceManager(
-      taskrun.Resource('core', 9999, 4),
-      taskrun.Resource('mem', 9999, 8000))
+      taskrun.CounterResource('core', 9999, 4),
+      taskrun.CounterResource('mem', 9999, 8000))
     ob = OrderCheckObserver(['+t1', '-t1'])
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', '')
@@ -30,8 +30,8 @@ class ResourcesTestCase(unittest.TestCase):
 
   def test_res3(self):
     rm = taskrun.ResourceManager(
-      taskrun.Resource('core', 9999, 1),
-      taskrun.Resource('mem', 9999, 8000))
+      taskrun.CounterResource('core', 9999, 1),
+      taskrun.CounterResource('mem', 9999, 8000))
     ob = OrderCheckObserver('+t1 -t1 +t2 -t2 +t3 -t3 +t4 -t4'.split())
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', '')
@@ -50,8 +50,8 @@ class ResourcesTestCase(unittest.TestCase):
 
   def test_res4(self):
     rm = taskrun.ResourceManager(
-      taskrun.Resource('core', 9999, 4),
-      taskrun.Resource('mem', 9999, 8000))
+      taskrun.CounterResource('core', 9999, 4),
+      taskrun.CounterResource('mem', 9999, 8000))
     ob = OrderCheckObserver('+t1 -t1 +t2 -t2 +t3 -t3 +t4 -t4'.split())
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', '')
@@ -70,8 +70,8 @@ class ResourcesTestCase(unittest.TestCase):
 
   def test_res5(self):
     rm = taskrun.ResourceManager(
-      taskrun.Resource('core', 9999, 1),
-      taskrun.Resource('mem', 9999, 8000))
+      taskrun.CounterResource('core', 9999, 1),
+      taskrun.CounterResource('mem', 9999, 8000))
     ob = OrderCheckObserver('+t1 -t1 +t2 -t2 +t3 -t3 +t4 -t4'.split())
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', '')
@@ -91,8 +91,8 @@ class ResourcesTestCase(unittest.TestCase):
 
   def test_res6(self):
     rm = taskrun.ResourceManager(
-      taskrun.Resource('core', 9999, 4),
-      taskrun.Resource('mem', 9999, 8000))
+      taskrun.CounterResource('core', 9999, 4),
+      taskrun.CounterResource('mem', 9999, 8000))
     ob = ComparisonCheckObserver(8,
                                  ['+t1 < +t2 +t3 +t4 -t4 -t3 -t2 -t1',
                                   '+t2 < +t3 +t4 -t4 -t3 -t2 -t1',
@@ -117,8 +117,8 @@ class ResourcesTestCase(unittest.TestCase):
 
   def test_res7(self):
     rm = taskrun.ResourceManager(
-      taskrun.Resource('core', 9999, 4),
-      taskrun.Resource('mem', 9999, 8000))
+      taskrun.CounterResource('core', 9999, 4),
+      taskrun.CounterResource('mem', 9999, 8000))
     ob = ComparisonCheckObserver(8,
                                  ['+t1 < +t2 +t3 +t4 -t4 -t3 -t2 -t1',
                                   '+t2 < +t3 +t4 -t4 -t3 -t2 -t1',

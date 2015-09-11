@@ -27,86 +27,67 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
+from .Resource import Resource
 
 
-class Resource(object):
+class CounterResource(Resource):
   """
-  This class defines the abstract interface for a resource
+  This class implements a counter as a resource
   """
 
-  def __init__(self, name, default):
+  def __init__(self, name, default, total):
     """
-    Constructs a Resource object
+    Constructs a CounterResource object
 
     Args:
-      name (str) : the name of the resource
-      default    : the default value for this resource
+      name (str)    : the name of the resource
+      default (num) : default value of tasks that don't specify it
+      total (num)   : total available to be used by tasks
     """
-    self._name = name
-    self._default = default
-
-  @property
-  def name(self):
-    """
-    Returns:
-      (str) : name of this Resource
-    """
-    return self._name
-
-  @name.setter
-  def name(self, value):
-    """
-    Sets the name of this Resource
-
-    Args:
-      value (str) : the new name
-    """
-    self._name = value
-
-  @property
-  def default(self):
-    """
-    Returns:
-      the default value
-    """
-    return self._default
-
-  @default.setter
-  def default(self, value):
-    """
-    Sets the default value of this Resource
-
-    Args:
-      value (num) : the new default value
-    """
-    self._default = value
+    super(CounterResource, self).__init__(name, default)
+    self._total = total
+    self._amount = total
 
   def can_use(self, task):
     """
-    This method checks if the specified task could use the resource
-
-    Args:
-      task (Task) : the task desiring to use the resource
+    See Resource.can_use()
     """
-    raise NotImplementedError('subclasses must override this')
+    uses = task.resource(self.name)
+    if uses is None:
+      uses = self.default
+
+    if uses > self._total:
+      raise ValueError('task \'{0}\' uses {1} units of resource \'{2}\''
+                       ' but there is only {3} units total'
+                       .format(task.name, uses, self.name,
+                               self._total))
+    return uses <= self._amount
 
   def use(self, task):
     """
-    This method checks and uses a resource by the specified task
-
-    Args:
-      task (Task) : the task desiring to use the resource
-
-    Returns:
-      (bool) : returns True if successful, False otherwise
+    See Resource.use()
     """
-    raise NotImplementedError('subclasses must override this')
+    uses = task.resource(self.name)
+    if uses is None:
+      uses = self.default
+
+    if uses > self._total:
+      raise ValueError('task \'{0}\' uses {1} units of resource \'{2}\''
+                       ' but there is only {3} units total'
+                       .format(task.name, uses, self.name,
+                               self._total))
+    if uses <= self._amount:
+      self._amount -= uses
+      return True
+    else:
+      return False
 
   def release(self, task):
     """
-    This method releases the resource used by the specified task
-
-    Args:
-      task (Task) : the task releasing the resource
+    See Resource.release()
     """
-    raise NotImplementedError('subclasses must override this')
+    uses = task.resource(self.name)
+    if uses is None:
+      uses = self.default
+    self._amount += uses
+    assert self._amount <= self._total

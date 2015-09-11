@@ -21,7 +21,7 @@ class ConditionsTestCase(unittest.TestCase):
     global thres
     total = 0
     thres = 100
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1))
     ob = OrderCheckObserver('+t1 -t1 +t2 -t2 +t3 -t3 +t4 -t4'.split())
     tm = taskrun.TaskManager(resource_manager=rm, observer=ob)
 
@@ -43,7 +43,7 @@ class ConditionsTestCase(unittest.TestCase):
     global thres
     total = 0
     thres = 10
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1))
     ob = OrderCheckObserver('+t1 -t1 +t2 -t2 *t3 *t4'.split())
     tm = taskrun.TaskManager(resource_manager=rm, observer=ob)
 
@@ -65,7 +65,7 @@ class ConditionsTestCase(unittest.TestCase):
     global thres
     total = 0
     thres = 0
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1))
     ob = OrderCheckObserver('*t1 *t2 *t3 *t4'.split())
     tm = taskrun.TaskManager(resource_manager=rm, observer=ob)
 

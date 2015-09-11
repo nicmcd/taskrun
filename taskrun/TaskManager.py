@@ -236,7 +236,7 @@ class TaskManager(object):
     # give back resources
     if not task.bypass():
       if self._resource_manager is not None:
-        self._resource_manager.task_done(task)
+        self._resource_manager.done(task)
 
     # notify waiting thread
     self._condition_variable.notify()
@@ -283,9 +283,10 @@ class TaskManager(object):
         bypass = next_task.bypass()
 
         # if not being bypassed, check if there enough resources to run the task
+        #  on success, the resource will have been used
         if (not bypass and
             self._resource_manager is not None and
-            self._resource_manager.task_starting(next_task) == False):
+            self._resource_manager.start(next_task) == False):
           self._condition_variable.wait()
           continue
 

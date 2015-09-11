@@ -1,6 +1,7 @@
 """This module provides the entire taskrun system"""
 
 from .Condition import Condition
+from .CounterResource import CounterResource
 from .FailureMode import FailureMode
 from .FileChangedDatabase import FileChangedDatabase
 from .FileCondition import FileCondition

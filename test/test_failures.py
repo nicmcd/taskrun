@@ -223,7 +223,7 @@ class FailuresTestCase(unittest.TestCase):
                                   '!t2 > !t3 +t4 +t3 +t2 +t1',
                                   '!t1 > !t3 +t4 +t3 +t2 +t1'],
                                  verbose=False)
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1000))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1000))
     tm = taskrun.TaskManager(observer=ob, resource_manager=rm,
                              failure_mode='aggressive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.04')
@@ -258,7 +258,7 @@ class FailuresTestCase(unittest.TestCase):
                                   '-t2 > !t3 +t4 +t3 +t2 +t1',
                                   '-t1 > !t3 +t4 +t3 +t2 +t1'],
                                  verbose=False)
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1000))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1000))
     tm = taskrun.TaskManager(observer=ob, resource_manager=rm,
                              failure_mode='passive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.04')
@@ -293,7 +293,7 @@ class FailuresTestCase(unittest.TestCase):
                                   '-t2 > !t3 +t4 +t3 +t2 +t1',
                                   '-t1 > !t3 +t4 +t3 +t2 +t1'],
                                  verbose=False)
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1000))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1000))
     tm = taskrun.TaskManager(observer=ob, resource_manager=rm,
                              failure_mode='active_continue')
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.04')
@@ -343,7 +343,7 @@ class FailuresTestCase(unittest.TestCase):
                                   '-t2 > !t3 +t4 +t3 +t2 +t1',
                                   '-t1 > !t3 +t4 +t3 +t2 +t1'],
                                  verbose=False)
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1000))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1000))
     tm = taskrun.TaskManager(observer=ob, resource_manager=rm,
                              failure_mode='blind_continue')
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.04')
@@ -376,7 +376,7 @@ class FailuresTestCase(unittest.TestCase):
                                   '+t3 < !t3',
                                   '!t3 > +t3 -t2 +t2 -t1 +t1'],
                                  verbose=False)
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1))
     tm = taskrun.TaskManager(observer=ob, resource_manager=rm,
                              failure_mode='aggressive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', '')
@@ -409,7 +409,7 @@ class FailuresTestCase(unittest.TestCase):
                                   '+t3 < !t3',
                                   '!t3 > +t3 -t2 +t2 -t1 +t1'],
                                  verbose=False)
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1))
     tm = taskrun.TaskManager(observer=ob, resource_manager=rm,
                              failure_mode='passive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', '')
@@ -446,7 +446,7 @@ class FailuresTestCase(unittest.TestCase):
                                   '+t4 < -t4',
                                   '-t4 > +t4 !t3 +t3 -t2 +t2 -t1 +t1'],
                                  verbose=False)
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1))
     tm = taskrun.TaskManager(observer=ob, resource_manager=rm,
                              failure_mode='active_continue')
     t1 = taskrun.ProcessTask(tm, 't1', '')
@@ -503,7 +503,7 @@ class FailuresTestCase(unittest.TestCase):
                                   ('-t3ba > +t3ba -t3b +t3b -t4 +t4 !t3 +t3 '
                                    '-t2 +t2 -t1 +t1')],
                                  verbose=False)
-    rm = taskrun.ResourceManager(taskrun.Resource('slot', 1, 1))
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1))
     tm = taskrun.TaskManager(observer=ob, resource_manager=rm,
                              failure_mode='blind_continue')
     t1 = taskrun.ProcessTask(tm, 't1', '')

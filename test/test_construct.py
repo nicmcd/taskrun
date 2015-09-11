@@ -14,10 +14,10 @@ class ConstructTestCase(unittest.TestCase):
     tm = taskrun.TaskManager(
       observer=taskrun.VerboseObserver(),
       resource_manager=taskrun.ResourceManager(
-        taskrun.Resource('cpu', 10, 64),
-        taskrun.Resource('mem', 1024*1024*1024, 256*1024*1024*1024),
-        taskrun.Resource('net', 1000, 10000),
-        taskrun.Resource('fds', 500, 50000)),
+        taskrun.CounterResource('cpu', 10, 64),
+        taskrun.CounterResource('mem', 1024*1024*1024, 256*1024*1024*1024),
+        taskrun.CounterResource('net', 1000, 10000),
+        taskrun.CounterResource('fds', 500, 50000)),
       failure_mode=taskrun.FailureMode.AGGRESSIVE_FAIL)
     tm.run_tasks()
 

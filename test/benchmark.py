@@ -20,7 +20,7 @@ def func(first, second, *args, **kwargs):
 num = 3000
 cpus = os.cpu_count()
 assert cpus > 0
-rm = taskrun.ResourceManager(taskrun.Resource('cpu', 1, cpus))
+rm = taskrun.ResourceManager(taskrun.CounterResource('cpu', 1, cpus))
 tm = taskrun.TaskManager(resource_manager=rm)
 
 # Process task
