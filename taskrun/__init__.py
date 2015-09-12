@@ -24,8 +24,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-"""This module provides the entire taskrun system"""
-
 from .Condition import Condition
 from .CounterResource import CounterResource
 from .FailureMode import FailureMode
@@ -33,6 +31,7 @@ from .FileChangedDatabase import FileChangedDatabase
 from .FileCondition import FileCondition
 from .FunctionCondition import FunctionCondition
 from .FunctionTask import FunctionTask
+from .MemoryResource import MemoryResource
 from .NopTask import NopTask
 from .Observer import Observer
 from .ProcessTask import ProcessTask

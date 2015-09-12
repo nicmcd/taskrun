@@ -38,7 +38,7 @@ class ProcessTask(Task):
   This class is a Task that runs as a subprocess
   """
 
-  def __init__(self, manager, name, command):
+  def __init__(self, manager, name, command=None):
     """
     This instiates a ProcessTask object with a subprocess command
 
@@ -55,6 +55,24 @@ class ProcessTask(Task):
     self.stdout = None
     self.stderr = None
     self._proc = None
+
+  @property
+  def command(self):
+    """
+    Returns:
+      (str) : the process's command
+    """
+    return self._command
+
+  @command.setter
+  def command(self, value):
+    """
+    Sets the process's command
+
+    Args:
+      value (str) : the new command
+    """
+    self._command = value
 
   @property
   def stdout_file(self):
