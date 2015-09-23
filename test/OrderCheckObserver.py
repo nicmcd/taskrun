@@ -14,12 +14,6 @@ class OrderCheckObserver(taskrun.Observer):
     if self._verbose:
       print(s)
     self._actual.append(s)
-    if self._order:
-      if self._order[0] != s:
-        self._ok = False
-      self._order.remove(self._order[0])
-    else:
-      self._ok = False
 
   def task_started(self, task):
     self.next('+{0}'.format(task.name))
@@ -34,7 +28,15 @@ class OrderCheckObserver(taskrun.Observer):
     self.next('!{0}'.format(task.name))
 
   def ok(self):
-    return self._ok and len(self._order) == 0
+    if self._verbose:
+      print('expected : {0}'.format(self._order))
+      print('actual   : {0}'.format(self._actual))
+    if len(self._order) != len(self._actual):
+      return False
+    for idx in range(len(self._order)):
+      if self._order[idx] != self._actual[idx]:
+        return False
+    return True
 
   def actual(self):
     return self._actual

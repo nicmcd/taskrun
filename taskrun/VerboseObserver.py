@@ -46,31 +46,37 @@ class VerboseObserver(Observer):
   This class is an observer for just printing what is happening
   """
 
-  def __init__(self, show_started=True, show_bypassed=True,
-               show_completed=True, show_error=True):
+  def __init__(self, show_start=True, show_bypass=True, show_complete=True,
+               show_fail=True, show_description=True):
     """
     Constructs an Observer
 
     Args:
-      show_started (bool)   : print description when tasks start
-      show_bypassed (bool)  : print description when tasks bypass
-      show_completed (bool) : print description when tasks complete
+      show_start (bool)     : print when tasks start
+      show_bypass (bool)    : print when tasks bypass
+      show_complete (bool)   : print when tasks complete
+      show_fail (bool)      : print when tasks fail
+      show_description (bool) : add the task description to the print out
     """
 
     super(VerboseObserver, self).__init__()
-    self._show_started = show_started
-    self._show_bypassed = show_bypassed
-    self._show_completed = show_completed
-    self._show_error = show_error
+    self._show_start = show_start
+    self._show_bypass = show_bypass
+    self._show_complete = show_complete
+    self._show_fail = show_fail
+    self._show_description = show_description
 
   def task_started(self, task):
     """
     See Observer.task_started()
     """
 
-    if self._show_started:
+    if self._show_start:
       # format the output string
-      text = "[Started '" + task.name + "'] " + task.describe()
+      text = '[Started: {0}]'.format(task.name)
+      # optionally add the description
+      if self._show_description:
+        text = '{0} {1}'.format(text, task.describe())
       # print
       print(text)
 
@@ -79,10 +85,15 @@ class VerboseObserver(Observer):
     See Observer.task_bypassed()
     """
 
-    if self._show_bypassed:
+    if self._show_bypass:
       # format the output string
-      text = "[Bypassed '" + task.name + "'] " + task.describe()
+      text = '[Bypassed: {0}]'.format(task.name)
+      # optionally add the description
+      if self._show_description:
+        text = '{0} {1}'.format(text, task.describe())
       # print
+      if USE_TERM_COLOR:
+        text = colored(text, 'yellow')
       print(text)
 
   def task_completed(self, task):
@@ -90,10 +101,15 @@ class VerboseObserver(Observer):
     See Observer.task_completed()
     """
 
-    if self._show_completed:
+    if self._show_complete:
       # format the output string
-      text = "[Completed '" + task.name + "'] " + task.describe()
+      text = '[Completed: {0}]'.format(task.name)
+      # optionally add the description
+      if self._show_description:
+        text = '{0} {1}'.format(text, task.describe())
       # print
+      if USE_TERM_COLOR:
+        text = colored(text, 'green')
       print(text)
 
   def task_failed(self, task, errors):
@@ -101,13 +117,17 @@ class VerboseObserver(Observer):
     See Observer.task_failed()
     """
 
-    if self._show_error:
+    if self._show_fail:
       # format the output string
-      text = "[Failed '" + task.name + "'] " + task.describe()
+      text = '[Failed: {0}]'.format(task.name)
+      # optionally add the description
+      if self._show_description:
+        text = '{0} {1}'.format(text, task.describe())
+      # append the error
       if isinstance(errors, int):
-        text += "\n  Return: " + str(errors)
+        text = '{0}\n  Return: {1}'.format(text, str(errors))
       else:
-        text += "\n  Message: " + str(errors)
+        text = '{0}\n  Message: {1}'.format(text, str(errors))
       if USE_TERM_COLOR:
         text = colored(text, 'red')
       # print

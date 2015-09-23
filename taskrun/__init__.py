@@ -27,8 +27,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from .Condition import Condition
 from .CounterResource import CounterResource
 from .FailureMode import FailureMode
-from .FileChangedDatabase import FileChangedDatabase
-from .FileCondition import FileCondition
+from .FileHashCondition import FileHashCondition
+from .FileHashDatabase import FileHashDatabase
+from .FileModificationCondition import FileModificationCondition
 from .FunctionCondition import FunctionCondition
 from .FunctionTask import FunctionTask
 from .MemoryResource import MemoryResource

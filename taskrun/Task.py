@@ -173,6 +173,7 @@ class Task(threading.Thread):
     Args:
       condition (Condition) : a condition for this task
     """
+    assert self._bypass == None
     self._conditions.append(condition)
 
 
@@ -188,20 +189,27 @@ class Task(threading.Thread):
     if len(self._dependencies) == 0:
       self._manager.task_ready(self)
 
+  @property
   def bypass(self):
     """
     Returns:
-      (bool) : True if the process should be bypassed,
+      (bool) : True if the process should be bypassed (not executed),
                False if it should execute
     """
 
     if self._bypass is None:
-      for condition in self._conditions:
-        if condition.check() != True:
-          self._bypass = True
-          return self._bypass
-      self._bypass = False
-      return self._bypass
+      if len(self._conditions) == 0:
+        # always run if no conditions
+        self._bypass = False
+        return self._bypass
+      else:
+        # default to bypassing unless atleast one condition says to runs
+        self._bypass = True
+        for condition in self._conditions:
+          if condition.check():
+            self._bypass = False
+          break
+        return self._bypass
     else:
       return self._bypass
 

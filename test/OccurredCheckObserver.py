@@ -4,20 +4,18 @@ import taskrun
 class OccurredCheckObserver(taskrun.Observer):
 
   def __init__(self, events, verbose=False):
-    self._events = set(events)
+    self._expected = set(events)
+    self._actual = set()
     self._verbose = verbose
     self._ok = True
 
   def reinit(self, events):
-    self._events = set(events)
+    self._expected = set(events)
 
   def next(self, s):
     if self._verbose:
       print(s)
-    if s not in self._events:
-      self._ok = False
-    else:
-      self._events.remove(s)
+    self._actual.add(s)
 
   def task_started(self, task):
     self.next('+{0}'.format(task.name))
@@ -32,8 +30,11 @@ class OccurredCheckObserver(taskrun.Observer):
     self.next('!{0}'.format(task.name))
 
   def ok(self):
-    if len(self._events) != 0:
-      print('ERROR: events count is {0}'.format(len(self._events)))
+    if self._verbose:
+      print('expected : {0}'.format(self._expected))
+      print('actual   : {0}'.format(self._actual))
+    if len(self._expected) != len(self._actual):
       return False
-    else:
-      return self._ok
+    if len(self._expected.symmetric_difference(self._actual)) > 0:
+      return False
+    return True

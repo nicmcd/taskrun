@@ -234,7 +234,7 @@ class TaskManager(object):
     self._running_tasks.remove(task)
 
     # give back resources
-    if not task.bypass():
+    if not task.bypass:
       if self._resource_manager is not None:
         self._resource_manager.done(task)
 
@@ -279,12 +279,9 @@ class TaskManager(object):
                 task.priority > next_task.priority):
             next_task = task
 
-        # check for task bypassing
-        bypass = next_task.bypass()
-
         # if not being bypassed, check if there enough resources to run the task
         #  on success, the resource will have been used
-        if (not bypass and
+        if (not next_task.bypass and
             self._resource_manager is not None and
             self._resource_manager.start(next_task) == False):
           self._condition_variable.wait()
@@ -295,7 +292,7 @@ class TaskManager(object):
         self._running_tasks.append(next_task)
 
         # signal started or bypassed
-        if not bypass:
+        if not next_task.bypass:
           self._task_started(next_task)
         else:
           self._task_bypassed(next_task)

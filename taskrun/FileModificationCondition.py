@@ -31,43 +31,49 @@ from .Condition import Condition
 import os
 
 
-class FileCondition(Condition):
+class FileModificationCondition(Condition):
   """
   This class uses lists of files to determine if a task should run. This
   condition takes a set of input files that are file based dependencies. This
-  condition will have the task run if any of the files have changed since the
-  last time. This condition takes a set of output files which the task would
+  condition will have the task run if any of the input files are newer than the
+  output files. This condition takes a set of output files which the task would
   create or modify if it ran. This condition will have the task run if any of
   these files do not exist.
   """
 
-  def __init__(self, filedb, inputs, outputs):
+  def __init__(self, inputs, outputs):
     """
-    This constructs a FileCondition object
+    This constructs a FileModificationCondition object.
 
     Args:
-      filedb (FileChangedDatabase) : a file database for checking file status
       inputs (list<str>)           : a list of filenames for the input files
       outputs (list<str>)          : a list of filenames for the output files
     """
-    super(FileCondition, self).__init__()
-    self._filedb = filedb
+    super(FileModificationCondition, self).__init__()
     self._inputs = inputs
     self._outputs = outputs
 
   def check(self):
     """
     See Condition.check()
-    This implementation will return True if any of the output files do not exist
-    or if the input files have changed
+    This implementation will return True if any of the output files do not
+    exist or if the input files are newer than the outputs
     """
 
-    # don't make fast fail decisions, changed() needs to be called on all inputs
-    ret = False
+    # check for non-existent output files
+    #  get minimum modification time of output files
+    mtime = float('INF')
     for ofile in self._outputs:
       if not os.path.isfile(ofile):
-        ret = True
+        return True
+      else:
+        mtime = min(mtime, os.path.getmtime(ofile))
+
+    # check whether any input file is newer than the minimum output file
+    #  modifcation time
     for ifile in self._inputs:
-      if self._filedb.changed(ifile):
-        ret = True
-    return ret
+      if os.path.getmtime(ifile) >= mtime:
+        return True
+
+    # all tests passed, don't need to run task
+    return False

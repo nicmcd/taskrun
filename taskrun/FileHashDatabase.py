@@ -27,12 +27,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
+import functools
 import hashlib
 import os
 import threading
 
 
-class FileChangedDatabase(object):
+class FileHashDatabase(object):
   """
   This class maintains a database of file change history. It only tracks if
   files have changed since last time it ran.
@@ -40,7 +41,7 @@ class FileChangedDatabase(object):
 
   def __init__(self, filename, algorithm='sha1'):
     """
-    This constructs a FileDatabase object.
+    This constructs a FileHashDatabase object.
 
     Notes:
       The input 'algorithm' can be md5, sha1, sha224, sha256, sha384, or sha512
@@ -91,8 +92,9 @@ class FileChangedDatabase(object):
       with open(self._filename, 'w') as ofile:
         for filename in self._files:
           hasher = self._hash_const()
-          with open(filename, 'r') as ifile:
-            hasher.update(ifile.read().encode('utf-8'))
+          with open(filename, mode='rb') as ifile:
+            for buf in iter(functools.partial(ifile.read, 1024), b''):
+              hasher.update(buf)
           digest = hasher.hexdigest()
           print('{0} {1}'.format(filename, digest), file=ofile)
 

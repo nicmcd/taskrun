@@ -15,7 +15,7 @@ def myfunc(name, quantity):
 def cond(*args, **kwargs):
   return total < thres
 
-class ConditionsTestCase(unittest.TestCase):
+class FunctionConditionsTestCase(unittest.TestCase):
   def test_allexec(self):
     global total
     global thres
