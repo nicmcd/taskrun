@@ -29,6 +29,7 @@ from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 from .ProcessTask import ProcessTask
 from .Resource import Resource
+import resource
 
 
 class MemoryResource(Resource):
@@ -83,8 +84,8 @@ class MemoryResource(Resource):
 
       # if this is a ProcessTask, use ulimit to enforce memory usage
       if isinstance(task, ProcessTask):
-        kilobytes = int(uses * 1024 * 1024)
-        task.command = 'ulimit -v {0}; {1}'.format(kilobytes, task.command)
+        membytes = int(uses * 1024 * 1024 * 1024)
+        task.add_prefunc(lambda: (limit_mem(membytes)))
       return True
     else:
       return False
@@ -98,3 +99,17 @@ class MemoryResource(Resource):
       uses = self.default
     self._amount += uses
     assert self._amount <= self._total
+
+
+def limit_mem(membytes):
+  """
+  This uses resource.RLIMIT_AS to limit the amount of address space THIS process
+  is able to use. This is intented to be used as a preexec_fn in the
+  subprocess.Popen constructor of taskrun.ProcessTask
+
+  Args:
+    membytes (int) : the number of bytes to be the threshold
+  """
+  limits = resource.getrlimit(resource.RLIMIT_AS)
+  limits = (membytes, limits[1])
+  resource.setrlimit(resource.RLIMIT_AS, limits)

@@ -55,6 +55,7 @@ class ProcessTask(Task):
     self.stdout = None
     self.stderr = None
     self._proc = None
+    self._prefuncs = []
 
   @property
   def command(self):
@@ -110,6 +111,15 @@ class ProcessTask(Task):
     """
     self._stderr_file = filename
 
+  def add_prefunc(self, func):
+    """
+    Adds a function (any callable) to be executed after the fork before the exec
+
+    Args:
+      func (callable) : a callable to be executed
+    """
+    self._prefuncs.append(func)
+
   def describe(self):
     """
     See Task.describe()
@@ -138,8 +148,9 @@ class ProcessTask(Task):
       stderr_fd = subprocess.PIPE
 
     # execute the task command
-    self._proc = subprocess.Popen(self._command, stdout=stdout_fd,
-                                  stderr=stderr_fd, shell=True)
+    self._proc = subprocess.Popen(
+      self._command, stdout=stdout_fd, stderr=stderr_fd, shell=True,
+      preexec_fn=lambda: ([func() for func in self._prefuncs]))
 
     # wait for the process to finish, collect output
     self.stdout, self.stderr = self._proc.communicate()
