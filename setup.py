@@ -7,7 +7,7 @@ try:
   from setuptools import setup
 except:
   print('please install setuptools via pip:')
-  print('  <pip_exe> install setuptools')
+  print('  pip3 install setuptools')
   sys.exit(-1)
 
 def find_version(*file_paths):
