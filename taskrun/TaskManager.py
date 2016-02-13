@@ -1,35 +1,39 @@
 """
-Copyright (c) 2013-2015, Nic McDonald
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice, this
-  list of conditions and the following disclaimer in the documentation and/or
-  other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) 2012-2016, Nic McDonald
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * - Neither the name of prim nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
 """
-
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-from .FailureMode import FailureMode
 import threading
 import time
+from .FailureMode import FailureMode
 
 
 class TaskManager(object):
@@ -65,7 +69,7 @@ class TaskManager(object):
       task (Task) : the task to add
     """
 
-    assert self._running == False
+    assert self._running is False
     self._waiting_tasks.append(task)
 
     # pass info to the observer
@@ -76,7 +80,7 @@ class TaskManager(object):
     """
     This method probes the waiting tasks to see if they are ready
     """
-    assert self._running == True
+    assert self._running is True
     temp_ready = []
     for task in self._waiting_tasks:
       if task.ready():
@@ -92,7 +96,7 @@ class TaskManager(object):
       task (Task) : the task that is now ready to run
     """
 
-    assert self._running == True
+    assert self._running is True
     with self._condition_variable:
       # check if this task is in the filter list
       if task in self._filter_tasks:
@@ -116,7 +120,7 @@ class TaskManager(object):
     Args:
       task (Task) : the task that completed
     """
-    assert self._running == True
+    assert self._running is True
 
     # notify observer
     if self._observer is not None:
@@ -131,7 +135,7 @@ class TaskManager(object):
     Args:
       task (Task) : the task that bypassed
     """
-    assert self._running == True
+    assert self._running is True
 
     # notify observer
     if self._observer is not None:
@@ -147,7 +151,7 @@ class TaskManager(object):
     Args:
       task (Task) : the task that completed
     """
-    assert self._running == True
+    assert self._running is True
 
     with self._condition_variable:
       # pass info to the observer
@@ -165,7 +169,7 @@ class TaskManager(object):
     Args:
       task (Task) : the task that encountered errors
     """
-    assert self._running == True
+    assert self._running is True
 
     # handle the failure
     with self._condition_variable:
@@ -232,7 +236,7 @@ class TaskManager(object):
     Args:
       task (Task) : the task that finished
     """
-    assert self._running == True
+    assert self._running is True
 
     # remove task from running lists
     self._running_tasks.remove(task)
@@ -250,7 +254,7 @@ class TaskManager(object):
     This runs all tasks in dependency order and executing with the
     ResourceManager's discretion
     """
-    assert self._running == False
+    assert self._running is False
     self._running = True
 
     # ask the tasks if they are ready to run (find root tasks)
@@ -287,7 +291,7 @@ class TaskManager(object):
         #  on success, the resource will have been used
         if (not next_task.bypass and
             self._resource_manager is not None and
-            self._resource_manager.start(next_task) == False):
+            self._resource_manager.start(next_task) is False):
           self._condition_variable.wait()
           continue
 
