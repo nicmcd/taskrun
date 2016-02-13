@@ -17,6 +17,9 @@ class OccurredCheckObserver(taskrun.Observer):
       print(s)
     self._actual.add(s)
 
+  def task_added(self, task):
+    self.next('@{0}'.format(task.name))
+
   def task_started(self, task):
     self.next('+{0}'.format(task.name))
 

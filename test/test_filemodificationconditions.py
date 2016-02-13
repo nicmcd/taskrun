@@ -24,7 +24,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     time.sleep(0.01)
 
     # initial run
-    ob = OrderCheckObserver(['+t1', '-t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -32,7 +32,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     self.assertTrue(ob.ok())
 
     # nothing changed
-    ob = OrderCheckObserver(['*t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -42,7 +42,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     self.assertTrue(ob.ok())
 
     # nothing changed
-    ob = OrderCheckObserver(['*t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -53,7 +53,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
 
     # missing output
     os.remove(file3)
-    ob = OrderCheckObserver(['+t1', '-t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -63,7 +63,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     self.assertTrue(ob.ok())
 
     # nothing changed
-    ob = OrderCheckObserver(['*t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -77,7 +77,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     with open(file1, 'w') as fd:
       print('hello file1!', file=fd)
     time.sleep(0.01)
-    ob = OrderCheckObserver(['+t1', '-t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -87,7 +87,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     self.assertTrue(ob.ok())
 
     # nothing changed
-    ob = OrderCheckObserver(['*t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -133,6 +133,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
         [files[proc_id][0], files[proc_id][1]],
         [files[proc_id][2]])
       task.add_condition(cond)
+      evts.append('@{0}'.format(task.name))
       evts.append('+{0}'.format(task.name))
       evts.append('-{0}'.format(task.name))
     ob.reinit(evts)
@@ -152,6 +153,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
         [files[proc_id][0], files[proc_id][1]],
         [files[proc_id][2]])
       task.add_condition(cond)
+      evts.append('@{0}'.format(task.name))
       evts.append('*{0}'.format(task.name))
     ob.reinit(evts)
     tm.run_tasks()
@@ -172,6 +174,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
         [files[proc_id][2]])
       task.add_condition(cond)
       # randomly sabotage this task
+      evts.append('@{0}'.format(task.name))
       if bool(rnd.getrandbits(1)):
         evts.append('+{0}'.format(task.name))
         evts.append('-{0}'.format(task.name))
@@ -202,6 +205,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
         [files[proc_id][0], files[proc_id][1]],
         [files[proc_id][2]])
       task.add_condition(cond)
+      evts.append('@{0}'.format(task.name))
       evts.append('*{0}'.format(task.name))
     ob.reinit(evts)
     tm.run_tasks()
@@ -222,6 +226,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
         [files[proc_id][2]])
       task.add_condition(cond)
       # randomly sabotage this task
+      evts.append('@{0}'.format(task.name))
       if bool(rnd.getrandbits(1)):
         evts.append('+{0}'.format(task.name))
         evts.append('-{0}'.format(task.name))

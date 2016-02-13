@@ -68,6 +68,10 @@ class TaskManager(object):
     assert self._running == False
     self._waiting_tasks.append(task)
 
+    # pass info to the observer
+    if self._observer is not None:
+      self._observer.task_added(task)
+
   def _probe_ready(self):
     """
     This method probes the waiting tasks to see if they are ready

@@ -12,7 +12,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
   def test_mem1(self):
     rm = taskrun.ResourceManager(
       taskrun.MemoryResource('ram', 9999, 1))
-    ob = OrderCheckObserver('+t1 -t1'.split(), verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
     t1.resources = {'ram': 1}
@@ -22,7 +22,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
   def test_mem2(self):
     rm = taskrun.ResourceManager(
       taskrun.MemoryResource('ram', 9999, 1))
-    ob = OrderCheckObserver('+t1 -t1'.split(), verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(
       tm, 't1', 'test/alloclots/alloclots 104857600 1000 5')
@@ -35,7 +35,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
   def test_mem3(self):
     rm = taskrun.ResourceManager(
       taskrun.MemoryResource('ram', 9999, 0.5))
-    ob = OrderCheckObserver('+t1 !t1'.split(), verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(
       tm, 't1', 'test/alloclots/alloclots 104857600 1000 10')
@@ -48,7 +48,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
   def test_mem4(self):
     rm = taskrun.ResourceManager(
       taskrun.MemoryResource('ram', 9999, 0.75))
-    ob = OrderCheckObserver('+t1 !t1'.split(), verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(
       tm, 't1', 'test/alloclots/alloclots 104857600 1000 10')
@@ -61,7 +61,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
   def test_mem5(self):
     rm = taskrun.ResourceManager(
       taskrun.MemoryResource('ram', 9999, 0.25))
-    ob = OrderCheckObserver('+t1 !t1'.split(), verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(
       tm, 't1', 'test/alloclots/alloclots 104857600 1000 5')

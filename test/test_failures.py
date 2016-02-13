@@ -10,63 +10,63 @@ import taskrun
 
 class FailuresTestCase(unittest.TestCase):
   def test_aggressive_none(self):
-    ob = OrderCheckObserver(['+t1', '-t1'])
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='aggressive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', 'true')
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
   def test_passive_none(self):
-    ob = OrderCheckObserver(['+t1', '-t1'])
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='passive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', 'true')
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
   def test_active_none(self):
-    ob = OrderCheckObserver(['+t1', '-t1'])
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='active_continue')
     t1 = taskrun.ProcessTask(tm, 't1', 'true')
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
   def test_blind_none(self):
-    ob = OrderCheckObserver(['+t1', '-t1'])
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='blind_continue')
     t1 = taskrun.ProcessTask(tm, 't1', 'true')
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
   def test_aggressive_single(self):
-    ob = OrderCheckObserver(['+t1', '!t1'])
+    ob = OrderCheckObserver(['@t1', '+t1', '!t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='aggressive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', 'false')
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
   def test_passive_single(self):
-    ob = OrderCheckObserver(['+t1', '!t1'])
+    ob = OrderCheckObserver(['@t1', '+t1', '!t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='passive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', 'false')
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
   def test_active_single(self):
-    ob = OrderCheckObserver(['+t1', '!t1'])
+    ob = OrderCheckObserver(['@t1', '+t1', '!t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='active_continue')
     t1 = taskrun.ProcessTask(tm, 't1', 'false')
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
   def test_blind_single(self):
-    ob = OrderCheckObserver(['+t1', '!t1'])
+    ob = OrderCheckObserver(['@t1', '+t1', '!t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='blind_continue')
     t1 = taskrun.ProcessTask(tm, 't1', 'false')
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
   def test_aggressive_sequence(self):
-    ob = OrderCheckObserver(['+t1', '!t1'])
+    ob = OrderCheckObserver(['@t1', '@t2', '+t1', '!t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='aggressive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', 'false')
     t2 = taskrun.ProcessTask(tm, 't2', 'false')
@@ -75,7 +75,7 @@ class FailuresTestCase(unittest.TestCase):
     self.assertTrue(ob.ok())
 
   def test_passive_sequence(self):
-    ob = OrderCheckObserver(['+t1', '!t1'])
+    ob = OrderCheckObserver(['@t1', '@t2', '+t1', '!t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='passive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', 'false')
     t2 = taskrun.ProcessTask(tm, 't2', 'false')
@@ -84,7 +84,7 @@ class FailuresTestCase(unittest.TestCase):
     self.assertTrue(ob.ok())
 
   def test_active_sequence(self):
-    ob = OrderCheckObserver(['+t1', '!t1'])
+    ob = OrderCheckObserver(['@t1', '@t2', '+t1', '!t1'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='active_continue')
     t1 = taskrun.ProcessTask(tm, 't1', 'false')
     t2 = taskrun.ProcessTask(tm, 't2', 'false')
@@ -93,7 +93,7 @@ class FailuresTestCase(unittest.TestCase):
     self.assertTrue(ob.ok())
 
   def test_blind_sequence(self):
-    ob = OrderCheckObserver(['+t1', '!t1', '+t2', '!t2'])
+    ob = OrderCheckObserver(['@t1', '@t2', '+t1', '!t1', '+t2', '!t2'])
     tm = taskrun.TaskManager(observer=ob, failure_mode='blind_continue')
     t1 = taskrun.ProcessTask(tm, 't1', 'false')
     t2 = taskrun.ProcessTask(tm, 't2', 'false')

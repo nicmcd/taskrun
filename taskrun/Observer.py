@@ -42,6 +42,15 @@ class Observer(object):
     """
     pass
 
+  def task_added(self, task):
+    """
+    Notification of a task added to the TaskManager
+
+    Args:
+      task (Task): the task that is now starting
+    """
+    raise NotImplementedError('subclasses must override this')
+
   def task_started(self, task):
     """
     Notification of a task starting

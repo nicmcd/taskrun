@@ -47,7 +47,7 @@ class VerboseObserver(Observer):
   """
 
   def __init__(self, show_start=True, show_bypass=True, show_complete=True,
-               show_fail=True, show_description=True):
+               show_fail=True, show_description=True, show_progress=True):
     """
     Constructs an Observer
 
@@ -65,6 +65,16 @@ class VerboseObserver(Observer):
     self._show_complete = show_complete
     self._show_fail = show_fail
     self._show_description = show_description
+    self._show_progress = show_progress
+    self._total_tasks = 0
+    self._finished_tasks = 0
+
+  def task_added(self, task):
+    """
+    See Observer.task_added()
+    This class used this only to create a count
+    """
+    self._total_tasks += 1
 
   def task_started(self, task):
     """
@@ -76,7 +86,7 @@ class VerboseObserver(Observer):
       text = '[Started: {0}]'.format(task.name)
       # optionally add the description
       if self._show_description:
-        text = '{0} {1}'.format(text, task.describe())
+        text += ' {0}'.format(task.describe())
       # print
       print(text)
 
@@ -85,50 +95,68 @@ class VerboseObserver(Observer):
     See Observer.task_bypassed()
     """
 
+    self._finished_tasks += 1
     if self._show_bypass:
       # format the output string
       text = '[Bypassed: {0}]'.format(task.name)
       # optionally add the description
       if self._show_description:
-        text = '{0} {1}'.format(text, task.describe())
+        text += ' {0}'.format(task.describe())
       # print
       if USE_TERM_COLOR:
         text = colored(text, 'yellow')
       print(text)
+
+    self._progress()
 
   def task_completed(self, task):
     """
     See Observer.task_completed()
     """
 
+    self._finished_tasks += 1
     if self._show_complete:
       # format the output string
       text = '[Completed: {0}]'.format(task.name)
       # optionally add the description
       if self._show_description:
-        text = '{0} {1}'.format(text, task.describe())
+        text += ' {0}'.format(task.describe())
       # print
       if USE_TERM_COLOR:
         text = colored(text, 'green')
       print(text)
+
+    self._progress()
 
   def task_failed(self, task, errors):
     """
     See Observer.task_failed()
     """
 
+    self._finished_tasks += 1
     if self._show_fail:
       # format the output string
       text = '[Failed: {0}]'.format(task.name)
       # optionally add the description
       if self._show_description:
-        text = '{0} {1}'.format(text, task.describe())
+        text += ' {0}'.format(task.describe())
       # append the error
       if isinstance(errors, int):
-        text = '{0}\n  Return: {1}'.format(text, str(errors))
+        text += '\n  Return: {0}'.format(str(errors))
       else:
-        text = '{0}\n  Message: {1}'.format(text, str(errors))
+        text += '\n  Message: {0}'.format(str(errors))
       if USE_TERM_COLOR:
         text = colored(text, 'red')
       # print
+      print(text)
+
+    self._progress()
+
+  def _progress(self):
+    if self._show_progress:
+      text = '[Progress: {0:3.2f}% {1}/{2}]'.format(
+          self._finished_tasks / self._total_tasks,
+          self._finished_tasks, self._total_tasks)
+      if USE_TERM_COLOR:
+        text = colored(text, 'magenta', attrs=['bold'])
       print(text)

@@ -25,7 +25,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
 
     # initial run
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
-    ob = OrderCheckObserver(['+t1', '-t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -37,7 +37,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
 
     # nothing changed
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
-    ob = OrderCheckObserver(['*t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -49,7 +49,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
 
     # nothing changed
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
-    ob = OrderCheckObserver(['*t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -62,7 +62,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     # missing output
     os.remove(file3)
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
-    ob = OrderCheckObserver(['+t1', '-t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -74,7 +74,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
 
     # nothing changed
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
-    ob = OrderCheckObserver(['*t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -88,7 +88,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     with open(file1, 'w') as fd:
       print('hello file1!', file=fd)
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
-    ob = OrderCheckObserver(['+t1', '-t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -100,7 +100,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
 
     # nothing changed
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
-    ob = OrderCheckObserver(['*t1'], verbose=False)
+    ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
@@ -150,6 +150,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
                                        [files[proc_id][0], files[proc_id][1]],
                                        [files[proc_id][2]])
       task.add_condition(cond)
+      evts.append('@{0}'.format(task.name))
       evts.append('+{0}'.format(task.name))
       evts.append('-{0}'.format(task.name))
     ob.reinit(evts)
@@ -171,6 +172,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
                                        [files[proc_id][0], files[proc_id][1]],
                                        [files[proc_id][2]])
       task.add_condition(cond)
+      evts.append('@{0}'.format(task.name))
       evts.append('*{0}'.format(task.name))
     ob.reinit(evts)
     tm.run_tasks()
@@ -193,6 +195,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
                                        [files[proc_id][2]])
       task.add_condition(cond)
       # randomly sabotage this task
+      evts.append('@{0}'.format(task.name))
       if bool(rnd.getrandbits(1)):
         evts.append('+{0}'.format(task.name))
         evts.append('-{0}'.format(task.name))
@@ -225,6 +228,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
                                        [files[proc_id][0], files[proc_id][1]],
                                        [files[proc_id][2]])
       task.add_condition(cond)
+      evts.append('@{0}'.format(task.name))
       evts.append('*{0}'.format(task.name))
     ob.reinit(evts)
     tm.run_tasks()
@@ -247,6 +251,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
                                        [files[proc_id][2]])
       task.add_condition(cond)
       # randomly sabotage this task
+      evts.append('@{0}'.format(task.name))
       if bool(rnd.getrandbits(1)):
         evts.append('+{0}'.format(task.name))
         evts.append('-{0}'.format(task.name))

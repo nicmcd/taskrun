@@ -21,7 +21,7 @@ class ResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CounterResource('core', 9999, 4),
       taskrun.CounterResource('mem', 9999, 8000))
-    ob = OrderCheckObserver(['+t1', '-t1'])
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'])
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', '')
     t1.resources = {'core': 1, 'mem': 5000}
@@ -32,7 +32,8 @@ class ResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CounterResource('core', 9999, 1),
       taskrun.CounterResource('mem', 9999, 8000))
-    ob = OrderCheckObserver('+t1 -t1 +t2 -t2 +t3 -t3 +t4 -t4'.split())
+    ob = OrderCheckObserver(['@t1', '@t2', '@t3', '@t4', '+t1', '-t1', '+t2',
+                             '-t2', '+t3', '-t3', '+t4', '-t4'])
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', '')
     t1.resources = {'core': 1, 'mem': 0}
@@ -52,7 +53,8 @@ class ResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CounterResource('core', 9999, 4),
       taskrun.CounterResource('mem', 9999, 8000))
-    ob = OrderCheckObserver('+t1 -t1 +t2 -t2 +t3 -t3 +t4 -t4'.split())
+    ob = OrderCheckObserver(['@t1', '@t2', '@t3', '@t4', '+t1', '-t1', '+t2',
+                             '-t2', '+t3', '-t3', '+t4', '-t4'])
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', '')
     t1.resources = {'core': 1, 'mem': 0}
@@ -72,7 +74,8 @@ class ResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CounterResource('core', 9999, 1),
       taskrun.CounterResource('mem', 9999, 8000))
-    ob = OrderCheckObserver('+t1 -t1 +t2 -t2 +t3 -t3 +t4 -t4'.split())
+    ob = OrderCheckObserver(['@t1', '@t2', '@t3', '@t4', '+t1', '-t1', '+t2',
+                             '-t2', '+t3', '-t3', '+t4', '-t4'])
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', '')
     t1.resources = {'core': 1, 'mem': 0}
