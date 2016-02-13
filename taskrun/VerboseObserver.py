@@ -153,10 +153,14 @@ class VerboseObserver(Observer):
     self._progress()
 
   def _progress(self):
+    """
+    This prints the progress of the tasks
+    """
+
     if self._show_progress:
       text = '[Progress: {0:3.2f}% {1}/{2}]'.format(
-          self._finished_tasks / self._total_tasks,
-          self._finished_tasks, self._total_tasks)
+        self._finished_tasks / self._total_tasks,
+        self._finished_tasks, self._total_tasks)
       if USE_TERM_COLOR:
         text = colored(text, 'magenta', attrs=['bold'])
       print(text)
