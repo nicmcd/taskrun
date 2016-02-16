@@ -166,5 +166,5 @@ class VerboseObserver(Observer):
         self._finished_tasks / self._total_tasks,
         self._finished_tasks, self._total_tasks)
       if USE_TERM_COLOR:
-        text = colored(text, 'magenta', attrs=['bold'])
+        text = colored(text, 'magenta')
       print(text)

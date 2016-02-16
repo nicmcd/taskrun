@@ -31,7 +31,9 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
+import math
 import resource
+import psutil
 from .ProcessTask import ProcessTask
 from .Resource import Resource
 
@@ -103,6 +105,17 @@ class MemoryResource(Resource):
       uses = self.default
     self._amount += uses
     assert self._amount <= self._total
+
+  def current_available_memory_gib():
+    """
+    Returns the currently available memory in the system defined as amount of
+    unused memory plus currently cached memory.
+
+    Returns:
+      (float) : amount of available memory in GiB
+    """
+    psmem = psutil.virtual_memory()
+    return math.floor((psmem.free + psmem.cached) / (1024 * 1024 * 1024))
 
 
 def limit_mem(membytes):

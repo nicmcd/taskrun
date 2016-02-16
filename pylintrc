@@ -6,7 +6,8 @@ disable=locally-disabled,
 	abstract-class-not-used,
 	abstract-class-little-used,
 	duplicate-code,
-	too-many-arguments
+	too-many-arguments,
+	no-method-argument
 
 [FORMAT]
 indent-string='  '

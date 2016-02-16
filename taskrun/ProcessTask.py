@@ -108,7 +108,7 @@ class ProcessTask(Task):
   @stderr_file.setter
   def stderr_file(self, filename):
     """
-    Sets the filename of the stderr text
+    Sets the filename of the stderr text.
 
     Args:
       filename (str) : a filename for stderr text
