@@ -38,6 +38,13 @@ import unittest
 import taskrun
 
 
+def myfunc(name, number):
+  assert isinstance(name, str)
+  assert name == 'jimbo'
+  assert isinstance(number, int)
+  assert number == 5
+
+
 class CpuTimeResourcesTestCase(unittest.TestCase):
   def test_cputime1(self):
     rm = taskrun.ResourceManager(
@@ -75,3 +82,47 @@ class CpuTimeResourcesTestCase(unittest.TestCase):
     self.assertTrue(t1.stdout.find('count=20') < 0)
     self.assertTrue(t1.stdout.find('completed') < 0)
     self.assertTrue(ob.ok())
+
+  def test_cputime4(self):
+    rm = taskrun.ResourceManager(
+      taskrun.CpuTimeResource('time', 20))
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
+    tm = taskrun.TaskManager(rm, ob)
+    t1 = taskrun.NopTask(tm, 't1')
+    tm.run_tasks()
+    self.assertTrue(ob.ok())
+
+  def test_cputime5(self):
+    rm = taskrun.ResourceManager(
+      taskrun.CpuTimeResource('time', 20))
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
+    tm = taskrun.TaskManager(rm, ob)
+    t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
+    tm.run_tasks()
+    self.assertTrue(ob.ok())
+
+  def test_cputime6(self):
+    rm = taskrun.ResourceManager(
+      taskrun.CpuTimeResource('time', 20))
+    tm = taskrun.TaskManager(rm)
+    t1 = taskrun.NopTask(tm, 't1')
+    t1.resources = {'time': 20}
+    error = False
+    try:
+      tm.run_tasks()
+    except AssertionError:
+      error = True
+    self.assertTrue(error)
+
+  def test_cputime7(self):
+    rm = taskrun.ResourceManager(
+      taskrun.CpuTimeResource('time', 20))
+    tm = taskrun.TaskManager(rm)
+    t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
+    t1.resources = {'time': 20}
+    error = False
+    try:
+      tm.run_tasks()
+    except AssertionError:
+      error = True
+    self.assertTrue(error)

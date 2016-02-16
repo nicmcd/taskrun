@@ -57,6 +57,9 @@ class CpuTimeResource(Resource):
     """
     See Resource.can_use()
     """
+    if task.resource(self.name) is not None:
+      assert isinstance(task, ProcessTask), ('only ProcessTasks can use '
+                                             'CpuTimeResources')
     return True
 
   def use(self, task):
@@ -64,11 +67,14 @@ class CpuTimeResource(Resource):
     See Resource.use()
     """
     secs = task.resource(self.name)
-    assert isinstance(secs, int), '"{0}" must be an int'.format(self.name)
     if secs is None:
       secs = self.default
+    else:
+      assert isinstance(task, ProcessTask), ('only ProcessTasks can use '
+                                             'CpuTimeResources')
+      assert isinstance(secs, int), '"{0}" must be an int'.format(self.name)
 
-    # if this is a ProcessTask, use ulimit to enforce CPU time
+    # enforce CPU time limit on the ProcessTask
     if isinstance(task, ProcessTask):
       task.add_prefunc(lambda: (limit_cputime(secs)))
 

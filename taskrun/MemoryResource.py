@@ -88,7 +88,7 @@ class MemoryResource(Resource):
     if uses <= self._amount:
       self._amount -= uses
 
-      # if this is a ProcessTask, use ulimit to enforce memory usage
+      # if this is a ProcessTask, enforce memory limit
       if isinstance(task, ProcessTask):
         membytes = int(uses * 1024 * 1024 * 1024)
         task.add_prefunc(lambda: (limit_mem(membytes)))
