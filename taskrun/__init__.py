@@ -30,6 +30,7 @@
 """
 from .Condition import Condition
 from .CounterResource import CounterResource
+from .CpuTimeResource import CpuTimeResource
 from .FailureMode import FailureMode
 from .FileHashCondition import FileHashCondition
 from .FileHashDatabase import FileHashDatabase

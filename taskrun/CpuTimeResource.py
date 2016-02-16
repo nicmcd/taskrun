@@ -31,102 +31,65 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import math
 import resource
-import psutil
 from .ProcessTask import ProcessTask
 from .Resource import Resource
 
 
-class MemoryResource(Resource):
+class CpuTimeResource(Resource):
   """
-  This class implements a memory resource. This implementation enforces the
-  memory usage by using the Python3 resource.RLIMIT_AS
+  This class implements a CPU time resource. This implementation enforces the
+  memory usage by using the Python3 resource.RLIMIT_CPU
   """
 
-  def __init__(self, name, default, total):
+  def __init__(self, name, default):
     """
     Constructs a CounterResource object
 
     Args:
       name (str)    : the name of the resource
-      default (num) : default value of tasks that don't specify it (in GiB)
-      total (num)   : total available to be used by tasks (in GiB)
+      default (num) : default value of tasks that don't specify it (in secs)
     """
-    super(MemoryResource, self).__init__(name, default)
-    self._total = total
-    self._amount = total
+    super(CpuTimeResource, self).__init__(name, default)
+    assert isinstance(default, int), '"default" must be an int'
 
   def can_use(self, task):
     """
     See Resource.can_use()
     """
-    uses = task.resource(self.name)
-    if uses is None:
-      uses = self.default
-
-    if uses > self._total:
-      raise ValueError('task \'{0}\' uses {1} units of resource \'{2}\''
-                       ' but there is only {3} units total'
-                       .format(task.name, uses, self.name,
-                               self._total))
-    return uses <= self._amount
+    return True
 
   def use(self, task):
     """
     See Resource.use()
     """
-    uses = task.resource(self.name)
-    if uses is None:
-      uses = self.default
+    secs = task.resource(self.name)
+    assert isinstance(secs, int), '"{0}" must be an int'.format(self.name)
+    if secs is None:
+      secs = self.default
 
-    if uses > self._total:
-      raise ValueError('task \'{0}\' uses {1} units of resource \'{2}\''
-                       ' but there is only {3} units total'
-                       .format(task.name, uses, self.name,
-                               self._total))
-    if uses <= self._amount:
-      self._amount -= uses
+    # if this is a ProcessTask, use ulimit to enforce CPU time
+    if isinstance(task, ProcessTask):
+      task.add_prefunc(lambda: (limit_cputime(secs)))
 
-      # if this is a ProcessTask, use ulimit to enforce memory usage
-      if isinstance(task, ProcessTask):
-        membytes = int(uses * 1024 * 1024 * 1024)
-        task.add_prefunc(lambda: (limit_mem(membytes)))
-      return True
-    else:
-      return False
+    return True
 
   def release(self, task):
     """
     See Resource.release()
     """
-    uses = task.resource(self.name)
-    if uses is None:
-      uses = self.default
-    self._amount += uses
-    assert self._amount <= self._total
-
-  def current_available_memory_gib():
-    """
-    Returns the currently available memory in the system defined as amount of
-    unused memory plus currently cached memory.
-
-    Returns:
-      (float) : amount of available memory in GiB
-    """
-    psmem = psutil.virtual_memory()
-    return math.floor((psmem.free + psmem.cached) / (1024 * 1024 * 1024))
+    pass
 
 
-def limit_mem(membytes):
+def limit_cputime(secs):
   """
-  This uses resource.RLIMIT_AS to limit the amount of address space THIS process
+  This uses resource.RLIMIT_CPU to limit the amount of CPU time THIS process
   is able to use. This is intented to be used as a preexec_fn in the
   subprocess.Popen constructor of taskrun.ProcessTask
 
   Args:
     membytes (int) : the number of bytes to be the threshold
   """
-  limits = resource.getrlimit(resource.RLIMIT_AS)
-  limits = (membytes, limits[1])
-  resource.setrlimit(resource.RLIMIT_AS, limits)
+  limits = resource.getrlimit(resource.RLIMIT_CPU)
+  limits = (secs, limits[1])
+  resource.setrlimit(resource.RLIMIT_CPU, limits)

@@ -9,16 +9,19 @@ install:
 
 clean:
 	rm -rf build dist taskrun.egg-info taskrun/*.pyc taskrun/__pycache__ test/*.pyc test/__pycache__
-	$(MAKE) -C test/alloclots/ clean
+	$(MAKE) -C test/testprogs/ clean
 
 lint:
 	pylint -r n taskrun
 
-test: test/alloclots/alloclots
+test: test/testprogs/alloclots test/testprogs/burncycles
 	python3 -m unittest -v -f
 
-test/alloclots/alloclots: test/alloclots/alloclots.cc
-	$(MAKE) -C test/alloclots/
+test/testprogs/alloclots: test/testprogs/alloclots.cc
+	$(MAKE) -C test/testprogs/
+
+test/testprogs/burncycles: test/testprogs/burncycles.cc
+	$(MAKE) -C test/testprogs/
 
 benchmark:
 	python3 test/benchmark.py

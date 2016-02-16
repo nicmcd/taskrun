@@ -38,65 +38,40 @@ import unittest
 import taskrun
 
 
-class MemoryResourcesTestCase(unittest.TestCase):
-  def test_mem1(self):
+class CpuTimeResourcesTestCase(unittest.TestCase):
+  def test_cputime1(self):
     rm = taskrun.ResourceManager(
-      taskrun.MemoryResource('ram', 9999, 1))
+      taskrun.CpuTimeResource('time', 1))
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
-    t1.resources = {'ram': 1}
+    t1.resources = {'time': 1}
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
-  def test_mem2(self):
+  def test_cputime2(self):
     rm = taskrun.ResourceManager(
-      taskrun.MemoryResource('ram', 9999, 1))
+      taskrun.CpuTimeResource('time', 10))
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(
-      tm, 't1', 'test/testprogs/alloclots 104857600 1000 5')
-    t1.resources = {'ram': 0.7}
+      tm, 't1', 'test/testprogs/burncycles 1 0.1')
+    t1.resources = {'time': 10}
     tm.run_tasks()
-    self.assertTrue(t1.stdout.find('+blocks=4') >= 0)
-    self.assertTrue(t1.stdout.find('all allocated') >= 0)
+    self.assertTrue(t1.stdout.find('count=10') >= 0)
+    self.assertTrue(t1.stdout.find('completed') >= 0)
     self.assertTrue(ob.ok())
 
-  def test_mem3(self):
+  def test_cputime3(self):
     rm = taskrun.ResourceManager(
-      taskrun.MemoryResource('ram', 9999, 0.5))
+      taskrun.CpuTimeResource('time', 20))
     ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
     tm = taskrun.TaskManager(rm, ob)
     t1 = taskrun.ProcessTask(
-      tm, 't1', 'test/testprogs/alloclots 104857600 1000 10')
-    t1.resources = {'ram': 0.5}
+      tm, 't1', 'test/testprogs/burncycles 3.0 0.1')
+    t1.resources = {'time': 2}
     tm.run_tasks()
-    self.assertTrue(t1.stdout.find('+blocks=4') >= 0)
-    self.assertTrue(t1.stdout.find('all allocated') < 0)
-    self.assertTrue(ob.ok())
-
-  def test_mem4(self):
-    rm = taskrun.ResourceManager(
-      taskrun.MemoryResource('ram', 9999, 0.75))
-    ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
-    t1 = taskrun.ProcessTask(
-      tm, 't1', 'test/testprogs/alloclots 104857600 1000 10')
-    t1.resources = {'ram': 0.75}
-    tm.run_tasks()
-    self.assertTrue(t1.stdout.find('+blocks=7') >= 0)
-    self.assertTrue(t1.stdout.find('all allocated') < 0)
-    self.assertTrue(ob.ok())
-
-  def test_mem5(self):
-    rm = taskrun.ResourceManager(
-      taskrun.MemoryResource('ram', 9999, 0.25))
-    ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
-    t1 = taskrun.ProcessTask(
-      tm, 't1', 'test/testprogs/alloclots 104857600 1000 5')
-    t1.resources = {'ram': 0.25}
-    tm.run_tasks()
-    self.assertTrue(t1.stdout.find('+blocks=2') >= 0)
-    self.assertTrue(t1.stdout.find('all allocated') < 0)
+    self.assertTrue(t1.stdout.find('count=10') >= 0)
+    self.assertTrue(t1.stdout.find('count=20') < 0)
+    self.assertTrue(t1.stdout.find('completed') < 0)
     self.assertTrue(ob.ok())
