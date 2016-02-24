@@ -31,6 +31,7 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
+from enum import Enum, unique
 import sys
 
 from .Observer import Observer
@@ -45,31 +46,38 @@ except ImportError:
 USE_TERM_COLOR &= sys.stdout.isatty()
 
 
+@unique
+class Verbosity(Enum):
+  """
+  This class creates sets verbosity for the VerbosityObserver
+  """
+
+  NONE = 0  # no output
+  FAILURE = 1  # only failures
+  START = 2  # starts and failures
+  COMPLETE = 3  # completes, bypasses, and failures
+  ALL = 4  # starts, completes, bypasses, failures, and progress
+
+
 class VerboseObserver(Observer):
   """
   This class is an observer for just printing what is happening
   """
 
-  def __init__(self, show_start=True, show_bypass=True, show_complete=True,
-               show_fail=True, show_description=True, show_progress=True):
+  def __init__(self, verbosity=Verbosity.ALL, description=False):
     """
     Constructs an Observer
 
+    Note: descriptions are always shown on error
+
     Args:
-      show_start (bool)     : print when tasks start
-      show_bypass (bool)    : print when tasks bypass
-      show_complete (bool)   : print when tasks complete
-      show_fail (bool)      : print when tasks fail
-      show_description (bool) : add the task description to the print out
+      verbosity (Verbosity) : the verbosity mode
+      description (bool)    : add the task description to the print out
     """
 
     super(VerboseObserver, self).__init__()
-    self._show_start = show_start
-    self._show_bypass = show_bypass
-    self._show_complete = show_complete
-    self._show_fail = show_fail
-    self._show_description = show_description
-    self._show_progress = show_progress
+    self._verbosity = verbosity
+    self._description = description
     self._total_tasks = 0
     self._finished_tasks = 0
 
@@ -85,11 +93,12 @@ class VerboseObserver(Observer):
     See Observer.task_started()
     """
 
-    if self._show_start:
+    if (self._verbosity is Verbosity.START or
+        self._verbosity is Verbosity.ALL):
       # format the output string
       text = '[Started: {0}]'.format(task.name)
       # optionally add the description
-      if self._show_description:
+      if self._description:
         text += ' {0}'.format(task.describe())
       # print
       print(text)
@@ -100,11 +109,12 @@ class VerboseObserver(Observer):
     """
 
     self._finished_tasks += 1
-    if self._show_bypass:
+    if (self._verbosity is Verbosity.COMPLETE or
+        self._verbosity is Verbosity.ALL):
       # format the output string
       text = '[Bypassed: {0}]'.format(task.name)
       # optionally add the description
-      if self._show_description:
+      if self._description:
         text += ' {0}'.format(task.describe())
       # print
       if USE_TERM_COLOR:
@@ -119,11 +129,12 @@ class VerboseObserver(Observer):
     """
 
     self._finished_tasks += 1
-    if self._show_complete:
+    if (self._verbosity is Verbosity.COMPLETE or
+        self._verbosity is Verbosity.ALL):
       # format the output string
       text = '[Completed: {0}]'.format(task.name)
       # optionally add the description
-      if self._show_description:
+      if self._description:
         text += ' {0}'.format(task.describe())
       # print
       if USE_TERM_COLOR:
@@ -138,12 +149,11 @@ class VerboseObserver(Observer):
     """
 
     self._finished_tasks += 1
-    if self._show_fail:
+    if self._verbosity is not Verbosity.NONE:
       # format the output string
       text = '[Failed: {0}]'.format(task.name)
-      # optionally add the description
-      if self._show_description:
-        text += ' {0}'.format(task.describe())
+      # add the description
+      text += '\n  Description: {0}'.format(task.describe())
       # append the error
       if isinstance(errors, int):
         text += '\n  Return: {0}'.format(str(errors))
@@ -161,7 +171,7 @@ class VerboseObserver(Observer):
     This prints the progress of the tasks
     """
 
-    if self._show_progress:
+    if self._verbosity is Verbosity.ALL:
       text = '[Progress: {0:3.2f}% {1}/{2}]'.format(
         self._finished_tasks / self._total_tasks * 100.0,
         self._finished_tasks, self._total_tasks)
