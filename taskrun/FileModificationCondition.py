@@ -42,7 +42,7 @@ class FileModificationCondition(Condition):
   condition will have the task run if any of the input files are newer than the
   output files. This condition takes a set of output files which the task would
   create or modify if it ran. This condition will have the task run if any of
-  these files do not exist.
+  the input or output files do not exist.
   """
 
   def __init__(self, inputs, outputs):
@@ -76,6 +76,8 @@ class FileModificationCondition(Condition):
     # check whether any input file is newer than the minimum output file
     #  modifcation time
     for ifile in self._inputs:
+      if not os.path.isfile(ifile):
+        return True
       if os.path.getmtime(ifile) >= mtime:
         return True
 
