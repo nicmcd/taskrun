@@ -126,6 +126,43 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
+    # input changed (test addInput)
+    time.sleep(0.01)
+    with open(file1, 'w') as fd:
+      print('hello file1!', file=fd)
+    time.sleep(0.01)
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
+    tm = taskrun.TaskManager(observer=ob)
+    t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
+                             .format(file1, file2, file3))
+    c1 = taskrun.FileModificationCondition([file2], [file3])
+    c1.addInput(file1)
+    t1.add_condition(c1)
+    tm.run_tasks()
+    self.assertTrue(ob.ok())
+
+    # missing output (test addOutput)
+    os.remove(file3)
+    ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
+    tm = taskrun.TaskManager(observer=ob)
+    t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
+                             .format(file1, file2, file3))
+    c1 = taskrun.FileModificationCondition([file1, file2], [])
+    c1.addOutput(file3)
+    t1.add_condition(c1)
+    tm.run_tasks()
+    self.assertTrue(ob.ok())
+
+    # nothing changed
+    ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
+    tm = taskrun.TaskManager(observer=ob)
+    t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
+                             .format(file1, file2, file3))
+    c1 = taskrun.FileModificationCondition([file1, file2], [file3])
+    t1.add_condition(c1)
+    tm.run_tasks()
+    self.assertTrue(ob.ok())
+
     # remove all files
     os.remove(file1)
     os.remove(file2)

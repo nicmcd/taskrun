@@ -45,7 +45,7 @@ class FileModificationCondition(Condition):
   the input or output files do not exist.
   """
 
-  def __init__(self, inputs, outputs):
+  def __init__(self, inputs=[], outputs=[]):
     """
     This constructs a FileModificationCondition object.
 
@@ -56,6 +56,24 @@ class FileModificationCondition(Condition):
     super(FileModificationCondition, self).__init__()
     self._inputs = inputs
     self._outputs = outputs
+
+  def addInput(self, filename):
+    """
+    This adds a new file to the input file list
+
+    Args:
+      filename (str) : the filename to be added
+    """
+    self._inputs.append(filename)
+
+  def addOutput(self, filename):
+    """
+    This adds a new file to the output file list
+
+    Args:
+      filename (str) : the filename to be added
+    """
+    self._outputs.append(filename)
 
   def check(self):
     """
