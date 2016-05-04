@@ -69,6 +69,19 @@ elapsed = stop - start
 print('tasks per second: {0:.3f}'
       .format(num / elapsed))
 
+# Grid task
+print('\n*** GridTask ***')
+start = time.clock()
+for idx in range(num):
+  taskrun.GridTask(tm, 'Task_{0:04d}'.format(idx), 'echo test')
+
+start = time.clock()
+tm.run_tasks()
+stop = time.clock()
+elapsed = stop - start
+print('tasks per second: {0:.3f}'
+      .format(num / elapsed))
+
 # Function task
 print('\n*** FunctionTask ***')
 start = time.clock()

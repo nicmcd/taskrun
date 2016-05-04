@@ -37,6 +37,7 @@ from .FileHashDatabase import FileHashDatabase
 from .FileModificationCondition import FileModificationCondition
 from .FunctionCondition import FunctionCondition
 from .FunctionTask import FunctionTask
+from .GridTask import GridTask
 from .MemoryResource import MemoryResource
 from .NopTask import NopTask
 from .Observer import Observer
