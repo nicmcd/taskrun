@@ -126,7 +126,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
-    # input changed (test addInput)
+    # input changed (test add_input)
     time.sleep(0.01)
     with open(file1, 'w') as fd:
       print('hello file1!', file=fd)
@@ -136,19 +136,19 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file2], [file3])
-    c1.addInput(file1)
+    c1.add_input(file1)
     t1.add_condition(c1)
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
-    # missing output (test addOutput)
+    # missing output (test add_output)
     os.remove(file3)
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(observer=ob)
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file1, file2], [])
-    c1.addOutput(file3)
+    c1.add_output(file3)
     t1.add_condition(c1)
     tm.run_tasks()
     self.assertTrue(ob.ok())

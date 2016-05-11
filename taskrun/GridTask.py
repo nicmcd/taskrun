@@ -127,7 +127,8 @@ class GridTask(Task):
     See Task.execute()
     """
     # execute the task command and wait for it to finish
-    ret = subprocess.call(['qsub',
+    ret = subprocess.call([
+      'qsub',
       '-sync', 'yes',           # wait for job to complete before exiting
       '-N', self.name,          # name of the task
       '-o', self._stderr_file,  # stdout
@@ -148,4 +149,3 @@ class GridTask(Task):
     """
 
     self.killed = True
-
