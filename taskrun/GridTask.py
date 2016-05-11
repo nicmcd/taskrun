@@ -53,8 +53,11 @@ class GridTask(Task):
 
     super(GridTask, self).__init__(manager, name)
     self._command = command
-    self._stdout_file = '/dev/null'
-    self._stderr_file = '/dev/null'
+    self._stdout_file = None
+    self._stderr_file = None
+    self.stdout = None
+    self.stderr = None
+    self._proc = None
 
   @property
   def command(self):
@@ -115,29 +118,46 @@ class GridTask(Task):
     See Task.describe()
     """
 
-    text = self._command
+    return self._build_command()
+
+  def _build_command(self):
+    """
+    This builds the command string for this grid task.
+
+    Returns:
+      (string) : the full command line
+    """
+    cmd = ['qsub',
+           '-b', 'yes',     # execute binary file
+           '-sync', 'yes',  # wait for job to complete before exiting
+           '-cwd',          # use current working directory
+           '-N', self.name] # name of the task
     if self._stdout_file:
-      text += " 1> " + self._stdout_file
+      cmd.extend(['-o', self._stdout_file])
     if self._stderr_file:
-      text += " 2> " + self._stderr_file
-    return text
+      cmd.extend(['-e', self._stderr_file])
+    cmd.append(self._command)
+    return ' '.join(cmd)
 
   def execute(self):
     """
     See Task.execute()
     """
-    # execute the task command and wait for it to finish
-    ret = subprocess.call([
-      'qsub',
-      '-sync', 'yes',           # wait for job to complete before exiting
-      '-N', self.name,          # name of the task
-      '-o', self._stderr_file,  # stdout
-      '-e', self._stderr_file,  # stderr
-      '-b', 'yes',              # execute binary file instead of job script
-      '-cwd',                   # use current working directory
-      self._command])
+
+    # start the command
+    cmd = self._build_command()
+    self._proc = subprocess.Popen(
+      cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+    # wait for the process to finish, collect output
+    self.stdout, self.stderr = self._proc.communicate()
+    if self.stdout is not None:
+      self.stdout = self.stdout.decode('utf-8')
+    if self.stderr is not None:
+      self.stderr = self.stderr.decode('utf-8')
 
     # check the return code
+    ret = self._proc.returncode
     if ret == 0:
       return None
     else:
@@ -149,3 +169,8 @@ class GridTask(Task):
     """
 
     self.killed = True
+
+    # there is a chance the proc hasn't been created yet or has already
+    #  completed
+    if self._proc:
+      self._proc.kill()

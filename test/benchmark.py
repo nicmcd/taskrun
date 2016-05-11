@@ -32,6 +32,7 @@
 
 import multiprocessing
 import os
+import subprocess
 import sys
 import time
 
@@ -47,11 +48,13 @@ def func(first, second, *args, **kwargs):
   assert 'dad' in kwargs
   assert kwargs['dad'] == False
 
-num = 3000
+num = 1
 cpus = os.cpu_count()
 assert cpus > 0
 rm = taskrun.ResourceManager(taskrun.CounterResource('cpu', 1, cpus))
-tm = taskrun.TaskManager(resource_manager=rm)
+# ob = taskrun.VerboseObserver(verbosity=taskrun.Verbosity.ALL, description=True)
+ob = None
+tm = taskrun.TaskManager(resource_manager=rm, observer=ob)
 
 # Process task
 print('\n*** ProcessTask ***')
@@ -61,19 +64,6 @@ for idx in range(num):
 stop = time.clock()
 elapsed = stop - start
 print('setup time: {0:.3f}s'.format(elapsed))
-
-start = time.clock()
-tm.run_tasks()
-stop = time.clock()
-elapsed = stop - start
-print('tasks per second: {0:.3f}'
-      .format(num / elapsed))
-
-# Grid task
-print('\n*** GridTask ***')
-start = time.clock()
-for idx in range(num):
-  taskrun.GridTask(tm, 'Task_{0:04d}'.format(idx), 'echo test')
 
 start = time.clock()
 tm.run_tasks()
@@ -114,3 +104,22 @@ stop = time.clock()
 elapsed = stop - start
 print('tasks per second: {0:.3f}'
       .format(num / elapsed))
+
+# Grid task
+if subprocess.call('qstat') == 0:
+  print('\n*** GridTask ***')
+  start = time.clock()
+  for idx in range(num):
+    taskrun.GridTask(tm, 'Task_{0:04d}'.format(idx), 'echo test')
+  stop = time.clock()
+  elapsed = stop - start
+  print('setup time: {0:.3f}s'.format(elapsed))
+
+  start = time.clock()
+  tm.run_tasks()
+  stop = time.clock()
+  elapsed = stop - start
+  print('tasks per second: {0:.3f}'
+        .format(num / elapsed))
+else:
+  print('\nqstat not installed, not performing GridTask benchmark')
