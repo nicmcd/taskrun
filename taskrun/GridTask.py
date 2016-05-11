@@ -31,6 +31,7 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
+import os
 import subprocess
 
 from .Task import Task
@@ -55,6 +56,7 @@ class GridTask(Task):
     self._command = command
     self._stdout_file = None
     self._stderr_file = None
+    self._queues = set()
     self.stdout = None
     self.stderr = None
     self._proc = None
@@ -113,11 +115,19 @@ class GridTask(Task):
     """
     self._stderr_file = filename
 
+  def add_queue(self, queue):
+    """
+    Adds a queue to the set of queue options
+
+    Args:
+      queue (str): the queue to be added
+    """
+    self._queues.add(queue)
+
   def describe(self):
     """
     See Task.describe()
     """
-
     return self._build_command()
 
   def _build_command(self):
@@ -125,7 +135,7 @@ class GridTask(Task):
     This builds the command string for this grid task.
 
     Returns:
-      (string) : the full command line
+      (str) : the full command line
     """
     cmd = ['qsub',
            '-b', 'yes',     # execute binary file
@@ -134,8 +144,14 @@ class GridTask(Task):
            '-N', self.name] # name of the task
     if self._stdout_file:
       cmd.extend(['-o', self._stdout_file])
+    else:
+      cmd.extend(['-o', os.devnull])
     if self._stderr_file:
       cmd.extend(['-e', self._stderr_file])
+    else:
+      cmd.extend(['-e', os.devnull])
+    if len(self._queues) > 0:
+      cmd.extend(['-q', ','.join(self._queues)])
     cmd.append(self._command)
     return ' '.join(cmd)
 
