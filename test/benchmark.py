@@ -48,13 +48,11 @@ def func(first, second, *args, **kwargs):
   assert 'dad' in kwargs
   assert kwargs['dad'] == False
 
-num = 1
+num = 3000
 cpus = os.cpu_count()
 assert cpus > 0
 rm = taskrun.ResourceManager(taskrun.CounterResource('cpu', 1, cpus))
-# ob = taskrun.VerboseObserver(verbosity=taskrun.Verbosity.ALL, description=True)
-ob = None
-tm = taskrun.TaskManager(resource_manager=rm, observer=ob)
+tm = taskrun.TaskManager(resource_manager=rm)
 
 # Process task
 print('\n*** ProcessTask ***')
@@ -107,10 +105,12 @@ print('tasks per second: {0:.3f}'
 
 # Grid task
 if subprocess.call('qstat') == 0:
+  gnum = 3
   print('\n*** GridTask ***')
   start = time.clock()
-  for idx in range(num):
-    taskrun.GridTask(tm, 'Task_{0:04d}'.format(idx), 'echo test')
+  for idx in range(gnum):
+    nm = 'Task_{0:04d}'.format(idx)
+    gt = taskrun.GridTask(tm, nm, 'touch output_{0}'.format(nm))
   stop = time.clock()
   elapsed = stop - start
   print('setup time: {0:.3f}s'.format(elapsed))
@@ -120,6 +120,6 @@ if subprocess.call('qstat') == 0:
   stop = time.clock()
   elapsed = stop - start
   print('tasks per second: {0:.3f}'
-        .format(num / elapsed))
+        .format(gnum / elapsed))
 else:
   print('\nqstat not installed, not performing GridTask benchmark')
