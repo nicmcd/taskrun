@@ -57,6 +57,7 @@ class GridTask(Task):
     self._stdout_file = None
     self._stderr_file = None
     self._queues = set()
+    self._grid_resources = dict()
     self.stdout = None
     self.stderr = None
     self._proc = None
@@ -115,14 +116,41 @@ class GridTask(Task):
     """
     self._stderr_file = filename
 
-  def add_queue(self, queue):
+  @property
+  def queues(self):
     """
-    Adds a queue to the set of queue options
+    Returns:
+      (set<str>) : the queues allowed to run in
+    """
+    return self._queues
+
+  @queues.setter
+  def queues(self, value):
+    """
+    Sets the allowed queues to run in
 
     Args:
-      queue (str): the queue to be added
+      value (strs): the queues
     """
-    self._queues.add(queue)
+    self._queues = set(value)
+
+  @property
+  def grid_resources(self):
+    """
+    Returns:
+      (dict<str,str>) : the resources in the grid
+    """
+    return self._grid_resources
+
+  @grid_resources.setter
+  def grid_resources(self, value):
+    """
+    Sets the grid resources for this task
+
+    Args:
+      value (strs): the resources
+    """
+    self._grid_resources = dict(value)
 
   def describe(self):
     """
@@ -152,6 +180,9 @@ class GridTask(Task):
       cmd.extend(['-e', os.devnull])
     if len(self._queues) > 0:
       cmd.extend(['-q', ','.join(self._queues)])
+    if len(self._grid_resources) > 0:
+      cmd.extend(['-l', ','.join(
+        ['{0}={1}'.format(k,v) for k,v in self._grid_resources.items()])])
     cmd.append(self._command)
     return ' '.join(cmd)
 
