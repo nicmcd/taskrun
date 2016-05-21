@@ -166,6 +166,7 @@ class GridTask(Task):
       (str) : the full command line
     """
     cmd = ['qsub',
+           '-V',            # copy full environment
            '-b', 'yes',     # execute binary file
            '-sync', 'yes',  # wait for job to complete before exiting
            '-cwd',          # use current working directory
@@ -213,6 +214,7 @@ class GridTask(Task):
   def kill(self):
     """
     See Task.kill()
+    This implementation calls subprocess.kill()
     """
 
     self.killed = True
