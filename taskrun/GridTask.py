@@ -182,7 +182,7 @@ class GridTask(Task):
       cmd.extend(['-q', ','.join(self._queues)])
     if len(self._grid_resources) > 0:
       cmd.extend(['-l', ','.join(
-        ['{0}={1}'.format(k,v) for k,v in self._grid_resources.items()])])
+        ['{0}={1}'.format(k, v) for k, v in self._grid_resources.items()])])
     cmd.append(self._command)
     return ' '.join(cmd)
 
