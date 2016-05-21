@@ -189,4 +189,7 @@ class ProcessTask(Task):
     # there is a chance the proc hasn't been created yet or has already
     #  completed
     if self._proc:
-      self._proc.kill()
+      try:
+        self._proc.kill()
+      except ProcessLookupError:
+        pass
