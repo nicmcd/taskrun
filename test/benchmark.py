@@ -104,9 +104,11 @@ print('tasks per second: {0:.3f}'
       .format(num / elapsed))
 
 # Grid task
-if subprocess.call('qstat') == 0:
+print('\n*** GridTask ***')
+try:
+  subprocess.call('qstat')  # will trigger FileNotFoundError
   gnum = 3
-  print('\n*** GridTask ***')
+
   start = time.clock()
   for idx in range(gnum):
     nm = 'Task_{0:04d}'.format(idx)
@@ -121,5 +123,5 @@ if subprocess.call('qstat') == 0:
   elapsed = stop - start
   print('tasks per second: {0:.3f}'
         .format(gnum / elapsed))
-else:
-  print('\nqstat not installed, not performing GridTask benchmark')
+except FileNotFoundError:
+  print('qstat/qsub not installed, not performing GridTask benchmark')
