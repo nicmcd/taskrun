@@ -31,47 +31,18 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import os
-from .Condition import Condition
+from .OrderCheckObserver import OrderCheckObserver
+import unittest
+import taskrun
 
 
-class FileHashCondition(Condition):
-  """
-  This class uses lists of files to determine if a task should run. This
-  condition takes a set of input files that are file based dependencies. This
-  condition will have the task run if any of the files have changed since the
-  last time. This condition takes a set of output files which the task would
-  create or modify if it ran. This condition will have the task run if any of
-  these files do not exist.
-  """
-
-  def __init__(self, filedb, inputs, outputs):
-    """
-    This constructs a FileHashCondition object
-
-    Args:
-      filedb (FileChangedDatabase) : a file database for checking file status
-      inputs (list<str>)           : a list of filenames for the input files
-      outputs (list<str>)          : a list of filenames for the output files
-    """
-    super(FileHashCondition, self).__init__()
-    self.filedb = filedb
-    self.inputs = inputs
-    self.outputs = outputs
-
-  def check(self):
-    """
-    See Condition.check()
-    This implementation will return True if any of the output files do not exist
-    or if the input files have changed
-    """
-
-    # don't make fast fail decisions, changed() needs to be called on all inputs
-    ret = False
-    for ofile in self.outputs:
-      if not os.path.isfile(ofile):
-        ret = True
-    for ifile in self.inputs:
-      if self.filedb.changed(ifile):
-        ret = True
-    return ret
+class MultipleObserversTestCase(unittest.TestCase):
+  def test_simple(self):
+    obs = [OrderCheckObserver(['@t1', '+t1', '-t1']),
+           OrderCheckObserver(['@t1', '+t1', '-t1']),
+           OrderCheckObserver(['@t1', '+t1', '-t1'])]
+    tm = taskrun.TaskManager(observers=obs)
+    t1 = taskrun.ProcessTask(tm, 't1', '')
+    tm.run_tasks()
+    for ob in obs:
+      self.assertTrue(ob.ok())

@@ -53,9 +53,6 @@ class ComparisonCheckObserver(taskrun.Observer):
     self._actual[s] = time.clock()
     self._events -= 1
 
-  def task_added(self, task):
-    pass
-
   def task_started(self, task):
     self.next('+{0}'.format(task.name))
 

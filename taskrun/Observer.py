@@ -53,7 +53,7 @@ class Observer(object):
     Args:
       task (Task): the task that is now starting
     """
-    raise NotImplementedError('subclasses must override this')
+    pass
 
   def task_started(self, task):
     """
@@ -62,7 +62,7 @@ class Observer(object):
     Args:
       task (Task): the task that is now starting
     """
-    raise NotImplementedError('subclasses must override this')
+    pass
 
   def task_bypassed(self, task):
     """
@@ -71,7 +71,7 @@ class Observer(object):
     Args:
       task (Task): the task that is bypassed
     """
-    raise NotImplementedError('subclasses must override this')
+    pass
 
   def task_completed(self, task):
     """
@@ -80,7 +80,7 @@ class Observer(object):
     Args:
       task (Task): the task that completed
     """
-    raise NotImplementedError('subclasses must override this')
+    pass
 
   def task_failed(self, task, errors):
     """
@@ -89,4 +89,4 @@ class Observer(object):
     Args:
       task (Task): the task that failed
     """
-    raise NotImplementedError('subclasses must override this')
+    pass

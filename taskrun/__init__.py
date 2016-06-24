@@ -32,6 +32,7 @@ from .Condition import Condition
 from .CounterResource import CounterResource
 from .CpuTimeResource import CpuTimeResource
 from .FailureMode import FailureMode
+from .FileCleanupObserver import FileCleanupObserver
 from .FileHashCondition import FileHashCondition
 from .FileHashDatabase import FileHashDatabase
 from .FileModificationCondition import FileModificationCondition

@@ -57,7 +57,7 @@ class Task(threading.Thread):
     self._priority = None
     self._dependencies = []
     self._dependents = []
-    self._conditions = []
+    self.conditions = []
     self._bypass = None
     self._errors = None
     self.killed = False
@@ -178,7 +178,7 @@ class Task(threading.Thread):
       condition (Condition) : a condition for this task
     """
     assert self._bypass is None
-    self._conditions.append(condition)
+    self.conditions.append(condition)
 
 
   def task_done(self, task):
@@ -202,14 +202,14 @@ class Task(threading.Thread):
     """
 
     if self._bypass is None:
-      if len(self._conditions) == 0:
+      if len(self.conditions) == 0:
         # always run if no conditions
         self._bypass = False
         return self._bypass
       else:
         # default to bypassing unless atleast one condition says to runs
         self._bypass = True
-        for condition in self._conditions:
+        for condition in self.conditions:
           if condition.check():
             self._bypass = False
           break

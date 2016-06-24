@@ -58,8 +58,8 @@ class FileModificationCondition(Condition):
       inputs = []
     if outputs is None:
       outputs = []
-    self._inputs = inputs
-    self._outputs = outputs
+    self.inputs = inputs
+    self.outputs = outputs
 
   def add_input(self, filename):
     """
@@ -68,7 +68,7 @@ class FileModificationCondition(Condition):
     Args:
       filename (str) : the filename to be added
     """
-    self._inputs.append(filename)
+    self.inputs.append(filename)
 
   def add_output(self, filename):
     """
@@ -77,7 +77,7 @@ class FileModificationCondition(Condition):
     Args:
       filename (str) : the filename to be added
     """
-    self._outputs.append(filename)
+    self.outputs.append(filename)
 
   def check(self):
     """
@@ -89,7 +89,7 @@ class FileModificationCondition(Condition):
     # check for non-existent output files
     #  get minimum modification time of output files
     mtime = float('INF')
-    for ofile in self._outputs:
+    for ofile in self.outputs:
       if not os.path.isfile(ofile):
         return True
       else:
@@ -97,7 +97,7 @@ class FileModificationCondition(Condition):
 
     # check whether any input file is newer than the minimum output file
     #  modifcation time
-    for ifile in self._inputs:
+    for ifile in self.inputs:
       if not os.path.isfile(ifile):
         return True
       if os.path.getmtime(ifile) >= mtime:
