@@ -42,7 +42,7 @@ class ConstructTestCase(unittest.TestCase):
 
   def test_complex_good(self):
     tm = taskrun.TaskManager(
-      observer=taskrun.VerboseObserver(),
+      observers=[taskrun.VerboseObserver()],
       resource_manager=taskrun.ResourceManager(
         taskrun.CounterResource('cpu', 10, 64),
         taskrun.CounterResource('mem', 1024*1024*1024, 256*1024*1024*1024),

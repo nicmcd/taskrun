@@ -55,7 +55,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
 
     # initial run
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     tm.run_tasks()
@@ -63,7 +63,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
 
     # nothing changed
     ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file1, file2], [file3])
@@ -73,7 +73,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
 
     # nothing changed
     ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file1, file2], [file3])
@@ -84,7 +84,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     # missing output
     os.remove(file3)
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file1, file2], [file3])
@@ -94,7 +94,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
 
     # nothing changed
     ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file1, file2], [file3])
@@ -108,7 +108,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
       print('hello file1!', file=fd)
     time.sleep(0.01)
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file1, file2], [file3])
@@ -118,7 +118,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
 
     # nothing changed
     ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file1, file2], [file3])
@@ -132,7 +132,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
       print('hello file1!', file=fd)
     time.sleep(0.01)
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file2], [file3])
@@ -144,7 +144,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     # missing output (test add_output)
     os.remove(file3)
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file1, file2], [])
@@ -155,7 +155,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
 
     # nothing changed
     ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileModificationCondition([file1, file2], [file3])
@@ -189,7 +189,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
 
     # initial
     ob = OccurredCheckObserver([], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     evts = []
     for proc_id in range(procs):
       task = taskrun.ProcessTask(tm, 't{0:04}'.format(proc_id),
@@ -209,7 +209,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
 
     # no change
     ob = OccurredCheckObserver([], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     evts = []
     for proc_id in range(procs):
       task = taskrun.ProcessTask(tm, 't{0:04}'.format(proc_id),
@@ -229,7 +229,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     # change some
     rnd = random.Random()
     ob = OccurredCheckObserver([], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     evts = []
     for proc_id in range(procs):
       task = taskrun.ProcessTask(tm, 't{0:04}'.format(proc_id),
@@ -261,7 +261,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
 
     # no change
     ob = OccurredCheckObserver([], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     evts = []
     for proc_id in range(procs):
       task = taskrun.ProcessTask(tm, 't{0:04}'.format(proc_id),
@@ -281,7 +281,7 @@ class FileModificationConditionsTestCase(unittest.TestCase):
     # change some
     rnd = random.Random()
     ob = OccurredCheckObserver([], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     evts = []
     for proc_id in range(procs):
       task = taskrun.ProcessTask(tm, 't{0:04}'.format(proc_id),

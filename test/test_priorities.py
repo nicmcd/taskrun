@@ -42,7 +42,7 @@ class PrioritiesTestCase(unittest.TestCase):
                                  ['+t1 < -t1 +t2 -t2',
                                   '+t2 < -t2'],
                                  verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
     t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.02')
     t1.priority = 2
@@ -55,7 +55,7 @@ class PrioritiesTestCase(unittest.TestCase):
                                  ['+t2 < -t2 +t1 -t1',
                                   '+t1 < -t1'],
                                  verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
     t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.02')
     t1.priority = 1
@@ -70,7 +70,7 @@ class PrioritiesTestCase(unittest.TestCase):
                                   '+t3 < -t3 +t4 -t4',
                                   '+t4 < -t4'],
                                  verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
     t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.02')
     t3 = taskrun.ProcessTask(tm, 't3', 'sleep 0.03')
@@ -89,7 +89,7 @@ class PrioritiesTestCase(unittest.TestCase):
                                   '+t4 < -t4 +t3 -t3',
                                   '+t3 < -t3'],
                                  verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
     t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.02')
     t3 = taskrun.ProcessTask(tm, 't3', 'sleep 0.03')

@@ -56,7 +56,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     # initial run
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileHashCondition(filedb, [file1, file2], [file3])
@@ -68,7 +68,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     # nothing changed
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
     ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileHashCondition(filedb, [file1, file2], [file3])
@@ -80,7 +80,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     # nothing changed
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
     ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileHashCondition(filedb, [file1, file2], [file3])
@@ -93,7 +93,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     os.remove(file3)
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileHashCondition(filedb, [file1, file2], [file3])
@@ -105,7 +105,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     # nothing changed
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
     ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileHashCondition(filedb, [file1, file2], [file3])
@@ -119,7 +119,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
       print('hello file1!', file=fd)
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileHashCondition(filedb, [file1, file2], [file3])
@@ -131,7 +131,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     # nothing changed
     filedb = taskrun.FileHashDatabase(dbpath, 'sha512')
     ob = OrderCheckObserver(['@t1', '*t1'], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'cat {0} {1} > {2}'
                              .format(file1, file2, file3))
     c1 = taskrun.FileHashCondition(filedb, [file1, file2], [file3])
@@ -169,7 +169,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     # initial
     filedb = taskrun.FileHashDatabase(dbpath, 'md5')
     ob = OccurredCheckObserver([], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     evts = []
     for proc_id in range(procs):
       task = taskrun.ProcessTask(tm, 't{0:04}'.format(proc_id),
@@ -191,7 +191,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     # no change
     filedb = taskrun.FileHashDatabase(dbpath, 'md5')
     ob = OccurredCheckObserver([], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     evts = []
     for proc_id in range(procs):
       task = taskrun.ProcessTask(tm, 't{0:04}'.format(proc_id),
@@ -213,7 +213,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     rnd = random.Random()
     filedb = taskrun.FileHashDatabase(dbpath, 'md5')
     ob = OccurredCheckObserver([], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     evts = []
     for proc_id in range(procs):
       task = taskrun.ProcessTask(tm, 't{0:04}'.format(proc_id),
@@ -247,7 +247,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     # no change
     filedb = taskrun.FileHashDatabase(dbpath, 'md5')
     ob = OccurredCheckObserver([], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     evts = []
     for proc_id in range(procs):
       task = taskrun.ProcessTask(tm, 't{0:04}'.format(proc_id),
@@ -269,7 +269,7 @@ class FileHashConditionsTestCase(unittest.TestCase):
     rnd = random.Random()
     filedb = taskrun.FileHashDatabase(dbpath, 'md5')
     ob = OccurredCheckObserver([], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
     evts = []
     for proc_id in range(procs):
       task = taskrun.ProcessTask(tm, 't{0:04}'.format(proc_id),

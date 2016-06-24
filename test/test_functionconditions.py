@@ -54,7 +54,7 @@ class FunctionConditionsTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1))
     ob = OrderCheckObserver(['@t1', '@t2', '@t3', '@t4', '+t1', '-t1', '+t2',
                              '-t2', '+t3', '-t3', '+t4', '-t4'])
-    tm = taskrun.TaskManager(resource_manager=rm, observer=ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
 
     t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
     t1.add_condition(taskrun.FunctionCondition(cond))
@@ -77,7 +77,7 @@ class FunctionConditionsTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1))
     ob = OrderCheckObserver(['@t1', '@t2', '@t3', '@t4', '+t1', '-t1', '+t2',
                              '-t2', '*t3', '*t4'])
-    tm = taskrun.TaskManager(resource_manager=rm, observer=ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
 
     t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
     t1.add_condition(taskrun.FunctionCondition(cond))
@@ -100,7 +100,7 @@ class FunctionConditionsTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1))
     ob = OrderCheckObserver(['@t1', '@t2', '@t3', '@t4', '*t1', '*t2', '*t3',
                              '*t4'])
-    tm = taskrun.TaskManager(resource_manager=rm, observer=ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
 
     t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
     t1.add_condition(taskrun.FunctionCondition(cond))

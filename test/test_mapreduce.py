@@ -50,7 +50,7 @@ class MapReduceTestCase(unittest.TestCase):
     rates = numpy.arange(5, 100+1, 5)
 
     ob = ComparisonCheckObserver(0, [], verbose=False)
-    tm = taskrun.TaskManager(observer=ob)
+    tm = taskrun.TaskManager(observers=[ob])
 
     # build all tasks
     map_all = taskrun.ProcessTask(tm, 'M', rsleep())

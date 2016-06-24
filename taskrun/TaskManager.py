@@ -41,14 +41,14 @@ class TaskManager(object):
   This class manages a group of tasks
   """
 
-  def __init__(self, resource_manager=None, observer=None,
+  def __init__(self, resource_manager=None, observers=None,
                failure_mode=FailureMode.AGGRESSIVE_FAIL):
     """
     Constructs a TaskManager object
 
     Args:
       resource_manager (ResourceManager) : the resource manager to use
-      observer (Observer)                : the observer to user
+      observers (Observer)               : a collection of observers to user
     """
 
     self._running = False
@@ -57,7 +57,9 @@ class TaskManager(object):
     self._running_tasks = []
     self._filter_tasks = []
     self._resource_manager = resource_manager
-    self._observer = observer
+    self._observers = []
+    if observers:
+      self._observers = [ob for ob in observers]
     self._condition_variable = threading.Condition()
     self._failure_mode = FailureMode.create(failure_mode)
 
@@ -73,8 +75,8 @@ class TaskManager(object):
     self._waiting_tasks.append(task)
 
     # pass info to the observer
-    if self._observer is not None:
-      self._observer.task_added(task)
+    for observer in self._observers:
+      observer.task_added(task)
 
   def _probe_ready(self):
     """
@@ -123,8 +125,8 @@ class TaskManager(object):
     assert self._running is True
 
     # notify observer
-    if self._observer is not None:
-      self._observer.task_started(task)
+    for observer in self._observers:
+      observer.task_started(task)
 
   def _task_bypassed(self, task):
     """
@@ -138,8 +140,8 @@ class TaskManager(object):
     assert self._running is True
 
     # notify observer
-    if self._observer is not None:
-      self._observer.task_bypassed(task)
+    for observer in self._observers:
+      observer.task_bypassed(task)
 
     # clean up the task
     self._task_done(task)
@@ -155,8 +157,8 @@ class TaskManager(object):
 
     with self._condition_variable:
       # pass info to the observer
-      if self._observer is not None:
-        self._observer.task_completed(task)
+      for observer in self._observers:
+        observer.task_completed(task)
 
       # clean up the task
       self._task_done(task)
@@ -219,8 +221,8 @@ class TaskManager(object):
         assert False, "programmer error, fire somebody!"
 
       # pass info to the observer
-      if self._observer is not None:
-        self._observer.task_failed(task, errors)
+      for observer in self._observers:
+        observer.task_failed(task, errors)
 
       # clean up the task
       self._task_done(task)

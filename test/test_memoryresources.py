@@ -43,7 +43,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.MemoryResource('ram', 9999, 1))
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
     t1.resources = {'ram': 1}
     tm.run_tasks()
@@ -53,7 +53,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.MemoryResource('ram', 9999, 1))
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(
       tm, 't1', 'test/testprogs/alloclots 104857600 1000 5')
     t1.resources = {'ram': 0.7}
@@ -66,7 +66,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.MemoryResource('ram', 9999, 0.5))
     ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(
       tm, 't1', 'test/testprogs/alloclots 104857600 1000 10')
     t1.resources = {'ram': 0.5}
@@ -79,7 +79,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.MemoryResource('ram', 9999, 0.75))
     ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(
       tm, 't1', 'test/testprogs/alloclots 104857600 1000 10')
     t1.resources = {'ram': 0.75}
@@ -92,7 +92,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.MemoryResource('ram', 9999, 0.25))
     ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(
       tm, 't1', 'test/testprogs/alloclots 104857600 1000 5')
     t1.resources = {'ram': 0.25}

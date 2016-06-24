@@ -50,7 +50,7 @@ class CpuTimeResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CpuTimeResource('time', 1))
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
     t1.resources = {'time': 1}
     tm.run_tasks()
@@ -60,7 +60,7 @@ class CpuTimeResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CpuTimeResource('time', 10))
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(
       tm, 't1', 'test/testprogs/burncycles 1 0.1')
     t1.resources = {'time': 10}
@@ -73,7 +73,7 @@ class CpuTimeResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CpuTimeResource('time', 20))
     ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(
       tm, 't1', 'test/testprogs/burncycles 3.0 0.1')
     t1.resources = {'time': 2}
@@ -87,7 +87,7 @@ class CpuTimeResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CpuTimeResource('time', 20))
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.NopTask(tm, 't1')
     tm.run_tasks()
     self.assertTrue(ob.ok())
@@ -96,7 +96,7 @@ class CpuTimeResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CpuTimeResource('time', 20))
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
     tm.run_tasks()
     self.assertTrue(ob.ok())

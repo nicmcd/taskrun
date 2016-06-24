@@ -42,7 +42,7 @@ class ResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CounterResource('core', 9999, 4),
       taskrun.CounterResource('mem', 9999, 8000))
-    tm = taskrun.TaskManager(rm, None)
+    tm = taskrun.TaskManager(resource_manager=rm)
     t1 = taskrun.ProcessTask(tm, 't1', '')
     with self.assertRaises(ValueError):
       tm.run_tasks()
@@ -52,7 +52,7 @@ class ResourcesTestCase(unittest.TestCase):
       taskrun.CounterResource('core', 9999, 4),
       taskrun.CounterResource('mem', 9999, 8000))
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'])
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', '')
     t1.resources = {'core': 1, 'mem': 5000}
     tm.run_tasks()
@@ -64,7 +64,7 @@ class ResourcesTestCase(unittest.TestCase):
       taskrun.CounterResource('mem', 9999, 8000))
     ob = OrderCheckObserver(['@t1', '@t2', '@t3', '@t4', '+t1', '-t1', '+t2',
                              '-t2', '+t3', '-t3', '+t4', '-t4'])
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', '')
     t1.resources = {'core': 1, 'mem': 0}
     t2 = taskrun.ProcessTask(tm, 't2', '')
@@ -85,7 +85,7 @@ class ResourcesTestCase(unittest.TestCase):
       taskrun.CounterResource('mem', 9999, 8000))
     ob = OrderCheckObserver(['@t1', '@t2', '@t3', '@t4', '+t1', '-t1', '+t2',
                              '-t2', '+t3', '-t3', '+t4', '-t4'])
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', '')
     t1.resources = {'core': 1, 'mem': 0}
     t2 = taskrun.ProcessTask(tm, 't2', '')
@@ -106,7 +106,7 @@ class ResourcesTestCase(unittest.TestCase):
       taskrun.CounterResource('mem', 9999, 8000))
     ob = OrderCheckObserver(['@t1', '@t2', '@t3', '@t4', '+t1', '-t1', '+t2',
                              '-t2', '+t3', '-t3', '+t4', '-t4'])
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', '')
     t1.resources = {'core': 1, 'mem': 0}
     t1.priority = 4
@@ -132,7 +132,7 @@ class ResourcesTestCase(unittest.TestCase):
                                   '+t3 < +t4 -t4 -t3 -t2 -t1',
                                   '+t4 < -t4 -t3 -t2 -t1'],
                                  verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.04')
     t1.resources = {'core': 1, 'mem': 0}
     t1.priority = 4
@@ -158,7 +158,7 @@ class ResourcesTestCase(unittest.TestCase):
                                   '+t3 < +t4 -t4 -t3 -t2 -t1',
                                   '+t4 < -t4 -t3 -t2 -t1'],
                                  verbose=False)
-    tm = taskrun.TaskManager(rm, ob)
+    tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
     t1.resources = {'core': 1, 'mem': 0}
     t1.priority = 4
