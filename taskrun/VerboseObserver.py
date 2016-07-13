@@ -64,7 +64,7 @@ class VerboseObserver(Observer):
   This class is an observer for just printing what is happening
   """
 
-  def __init__(self, verbosity=Verbosity.ALL, description=False):
+  def __init__(self, verbosity=Verbosity.ALL, description=False, log=None):
     """
     Constructs an Observer
 
@@ -80,6 +80,7 @@ class VerboseObserver(Observer):
     self._description = description
     self._total_tasks = 0
     self._finished_tasks = 0
+    self._log = log;
 
   def task_added(self, task):
     """
@@ -100,6 +101,9 @@ class VerboseObserver(Observer):
       # optionally add the description
       if self._description:
         text += ' {0}'.format(task.describe())
+      # log
+      if self._log:
+        print(text, file=self._log)
       # print
       print(text)
 
@@ -116,6 +120,9 @@ class VerboseObserver(Observer):
       # optionally add the description
       if self._description:
         text += ' {0}'.format(task.describe())
+      # log
+      if self._log:
+        print(text, file=self._log)
       # print
       if USE_TERM_COLOR:
         text = colored(text, 'yellow')
@@ -136,6 +143,9 @@ class VerboseObserver(Observer):
       # optionally add the description
       if self._description:
         text += ' {0}'.format(task.describe())
+      # log
+      if self._log:
+        print(text, file=self._log)
       # print
       if USE_TERM_COLOR:
         text = colored(text, 'green')
@@ -159,9 +169,12 @@ class VerboseObserver(Observer):
         text += '\n  Return: {0}'.format(str(errors))
       else:
         text += '\n  Message: {0}'.format(str(errors))
+      # log
+      if self._log:
+        print(text, file=self._log)
+      # print
       if USE_TERM_COLOR:
         text = colored(text, 'red')
-      # print
       print(text)
 
     self._progress()
@@ -175,6 +188,10 @@ class VerboseObserver(Observer):
       text = '[Progress: {0:3.2f}% {1}/{2}]'.format(
         self._finished_tasks / self._total_tasks * 100.0,
         self._finished_tasks, self._total_tasks)
+      # log
+      if self._log:
+        print(text, file=self._log)
+      # print
       if USE_TERM_COLOR:
         text = colored(text, 'magenta')
       print(text)
