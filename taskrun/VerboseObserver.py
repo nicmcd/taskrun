@@ -64,7 +64,8 @@ class VerboseObserver(Observer):
   This class is an observer for just printing what is happening
   """
 
-  def __init__(self, verbosity=Verbosity.ALL, description=False, log=None):
+  def __init__(self, verbosity=Verbosity.ALL, description=False, summary=True,
+               log=None):
     """
     Constructs an Observer
 
@@ -80,7 +81,12 @@ class VerboseObserver(Observer):
     self._description = description
     self._total_tasks = 0
     self._finished_tasks = 0
-    self._log = log;
+    self._successful_tasks = 0
+    self._bypassed_tasks = 0
+    self._failed_tasks = 0
+    self._summary = summary
+    self._log = log
+
 
   def task_added(self, task):
     """
@@ -113,6 +119,7 @@ class VerboseObserver(Observer):
     """
 
     self._finished_tasks += 1
+    self._bypassed_tasks += 1
     if (self._verbosity is Verbosity.COMPLETE or
         self._verbosity is Verbosity.ALL):
       # format the output string
@@ -136,6 +143,7 @@ class VerboseObserver(Observer):
     """
 
     self._finished_tasks += 1
+    self._successful_tasks += 1
     if (self._verbosity is Verbosity.COMPLETE or
         self._verbosity is Verbosity.ALL):
       # format the output string
@@ -159,6 +167,7 @@ class VerboseObserver(Observer):
     """
 
     self._finished_tasks += 1
+    self._failed_tasks += 1
     if self._verbosity is not Verbosity.NONE:
       # format the output string
       text = '[Failed: {0}]'.format(task.name)
@@ -194,4 +203,45 @@ class VerboseObserver(Observer):
       # print
       if USE_TERM_COLOR:
         text = colored(text, 'magenta')
+      print(text)
+
+    if self._finished_tasks == self._total_tasks:
+      self._show_summary()
+
+  def _show_summary(self):
+    """
+    This prints the summary of the tasks' execution
+    """
+
+    if (self._verbosity is Verbosity.COMPLETE or
+        self._verbosity is Verbosity.ALL):
+      text = '\nTask Summary:'
+      if self._log:
+        print(text, file=self._log)
+      print(text)
+
+      text = '  Total      : {0}'.format(self._total_tasks)
+      if self._log:
+        print(text, file=self._log)
+      print(text)
+
+      text = '  Successful : {0}'.format(self._successful_tasks)
+      if self._log:
+        print(text, file=self._log)
+      if USE_TERM_COLOR:
+        text = colored(text, 'green')
+      print(text)
+
+      text = '  Bypassed   : {0}'.format(self._bypassed_tasks)
+      if self._log:
+        print(text, file=self._log)
+      if USE_TERM_COLOR:
+        text = colored(text, 'yellow')
+      print(text)
+
+      text = '  Failed     : {0}'.format(self._failed_tasks)
+      if self._log:
+        print(text, file=self._log)
+      if USE_TERM_COLOR:
+        text = colored(text, 'red')
       print(text)
