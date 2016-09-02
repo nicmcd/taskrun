@@ -319,3 +319,7 @@ class TaskManager(object):
 
     # turn off
     self._running = False
+
+    # inform all observers of run completion
+    for observer in self._observers:
+      observer.run_complete()

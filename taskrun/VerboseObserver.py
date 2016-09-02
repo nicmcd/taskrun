@@ -188,6 +188,13 @@ class VerboseObserver(Observer):
 
     self._progress()
 
+  def run_complete(self):
+    """
+    See Observer.run_complete()
+    """
+    if self._summary:
+      self._show_summary()
+
   def _progress(self):
     """
     This prints the progress of the tasks
@@ -204,9 +211,6 @@ class VerboseObserver(Observer):
       if USE_TERM_COLOR:
         text = colored(text, 'magenta')
       print(text)
-
-    if self._finished_tasks == self._total_tasks:
-      self._show_summary()
 
   def _show_summary(self):
     """

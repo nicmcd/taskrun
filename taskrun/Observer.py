@@ -90,3 +90,9 @@ class Observer(object):
       task (Task): the task that failed
     """
     pass
+
+  def run_complete(self):
+    """
+    Notification of run completion
+    """
+    pass
