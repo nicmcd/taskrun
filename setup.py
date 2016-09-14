@@ -60,5 +60,5 @@ setup(
     url='http://github.com/nicmcd/taskrun',
     packages=['taskrun'],
     install_requires=['termcolor >= 1.1.0',
-                      'psutil >= 3.4.2'],
+                      'psutil >= 4.0.0'],
     )
