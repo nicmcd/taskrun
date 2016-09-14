@@ -5,7 +5,10 @@ help:
 	@echo "options are: install clean lint test benchmark count"
 
 install:
-	python3 setup.py install --user
+	python3 setup.py install --user --record files.txt
+
+uninstall:
+	cat files.txt | xargs rm -rf
 
 clean:
 	rm -rf build dist taskrun.egg-info taskrun/*.pyc taskrun/__pycache__ test/*.pyc test/__pycache__

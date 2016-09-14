@@ -21,6 +21,7 @@ __pycache__
 
 # Installer logs
 pip-log.txt
+files.txt
 
 # Unit test / coverage reports
 .coverage
