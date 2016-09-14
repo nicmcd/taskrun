@@ -87,6 +87,8 @@ class VerboseObserver(Observer):
     self._summary = summary
     self._log = log
 
+    assert isinstance(verbosity, Verbosity), \
+      'verbosity must be a Verbosity type'
 
   def task_added(self, task):
     """
