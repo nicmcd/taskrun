@@ -114,8 +114,8 @@ class MemoryResource(Resource):
     Returns:
       (float) : amount of available memory in GiB
     """
-    psmem = psutil.virtual_memory()
-    return math.floor((psmem.free + psmem.cached) / (1024 * 1024 * 1024))
+    return math.floor((psutil.virtual_memory().available) /
+                      (1024 * 1024 * 1024))
 
 
 def limit_mem(membytes):
