@@ -32,7 +32,9 @@
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 from enum import Enum, unique
+import datetime
 import sys
+import time
 
 from .Observer import Observer
 
@@ -65,7 +67,7 @@ class VerboseObserver(Observer):
   """
 
   def __init__(self, verbosity=Verbosity.ALL, description=False, summary=True,
-               log=None):
+               time=True, log=None):
     """
     Constructs an Observer
 
@@ -85,6 +87,9 @@ class VerboseObserver(Observer):
     self._bypassed_tasks = 0
     self._failed_tasks = 0
     self._summary = summary
+    self._time = time
+    self._times = {}
+    self._start_time = None
     self._log = log
 
     assert isinstance(verbosity, Verbosity), \
@@ -101,6 +106,9 @@ class VerboseObserver(Observer):
     """
     See Observer.task_started()
     """
+
+    if self._time:
+      self._times[task] = time.time()
 
     if (self._verbosity is Verbosity.START or
         self._verbosity is Verbosity.ALL):
@@ -144,15 +152,22 @@ class VerboseObserver(Observer):
     See Observer.task_completed()
     """
 
+    if self._time:
+      task_time = time.time() - self._times.pop(task)
+
     self._finished_tasks += 1
     self._successful_tasks += 1
     if (self._verbosity is Verbosity.COMPLETE or
         self._verbosity is Verbosity.ALL):
       # format the output string
-      text = '[Completed: {0}]'.format(task.name)
+      text = '[Completed: {0}'.format(task.name)
+      # optionally add the time
+      if self._time:
+        text += ' {0}'.format(_time_string(task_time))
+      text += ']'
       # optionally add the description
       if self._description:
-        text += ' {0}'.format(task.describe())
+        text += '\n  {0}'.format(task.describe())
       # log
       if self._log:
         print(text, file=self._log)
@@ -168,11 +183,18 @@ class VerboseObserver(Observer):
     See Observer.task_failed()
     """
 
+    if self._time:
+      task_time = time.time() - self._times.pop(task)
+
     self._finished_tasks += 1
     self._failed_tasks += 1
     if self._verbosity is not Verbosity.NONE:
       # format the output string
-      text = '[Failed: {0}]'.format(task.name)
+      text = '[Failed: {0}'.format(task.name)
+      # optionally add the time
+      if self._time:
+        text += ' {0}'.format(_time_string(task_time))
+      text += ']'
       # add the description
       text += '\n  Description: {0}'.format(task.describe())
       # append the error
@@ -190,6 +212,12 @@ class VerboseObserver(Observer):
 
     self._progress()
 
+  def run_starting(self):
+    """
+    See Observer.run_starting()
+    """
+    self._start_time = time.time()
+
   def run_complete(self):
     """
     See Observer.run_complete()
@@ -203,9 +231,16 @@ class VerboseObserver(Observer):
     """
 
     if self._verbosity is Verbosity.ALL:
-      text = '[Progress: {0:3.2f}% {1}/{2}]'.format(
+      text = '[Progress: {0:3.2f}% {1}/{2}'.format(
         self._finished_tasks / self._total_tasks * 100.0,
         self._finished_tasks, self._total_tasks)
+      # optionally add the estimated time to complete
+      if self._time:
+        run_time = time.time() - self._start_time
+        exec_rate = self._finished_tasks / run_time
+        est_time = (self._total_tasks - self._finished_tasks) / exec_rate
+        text += ' {0}'.format(_time_string(est_time))
+      text += ']'
       # log
       if self._log:
         print(text, file=self._log)
@@ -251,3 +286,27 @@ class VerboseObserver(Observer):
       if USE_TERM_COLOR:
         text = colored(text, 'red')
       print(text)
+
+def _time_string(time):
+  """
+  This returns a string representing the elapsed time given
+
+  Args:
+    time: the elapsed time
+  """
+
+  days, rem = divmod(time, 60 * 60 * 24)
+  hours, rem = divmod(rem, 60 * 60)
+  minutes, seconds = divmod(rem, 60)
+  if days > 0:
+    return '{0}d:{1}h:{2}m:{3}s'.format(
+      int(days), int(hours), int(minutes), int(seconds))
+  elif hours > 0:
+    return '{0}h:{1}m:{2}s'.format(
+      int(hours), int(minutes), int(seconds))
+  elif minutes > 0:
+    return '{0}m:{1}s'.format(
+      int(minutes), int(seconds))
+  else:
+    return '{0}s'.format(
+      int(seconds))

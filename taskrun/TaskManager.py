@@ -262,6 +262,10 @@ class TaskManager(object):
     # ask the tasks if they are ready to run (find root tasks)
     self._probe_ready()
 
+    # inform all observers of run starting
+    for observer in self._observers:
+      observer.run_starting()
+
     # run all tasks until there is none left
     while True:
       # use the condition variable for pausing/resuming and locking

@@ -91,6 +91,12 @@ class Observer(object):
     """
     pass
 
+  def run_starting(self):
+    """
+    Notification of run starting
+    """
+    pass
+
   def run_complete(self):
     """
     Notification of run completion
