@@ -237,9 +237,12 @@ class VerboseObserver(Observer):
       # optionally add the estimated time to complete
       if self._time:
         run_time = time.time() - self._start_time
-        exec_rate = self._finished_tasks / run_time
-        est_time = (self._total_tasks - self._finished_tasks) / exec_rate
-        text += ' {0}'.format(_time_string(est_time))
+        exec_rate = (self._successful_tasks + self._failed_tasks) / run_time
+        if exec_rate == 0.0:
+          text += ' INFINITY'
+        else:
+          est_time = (self._total_tasks - self._finished_tasks) / exec_rate
+          text += ' {0}'.format(_time_string(est_time))
       text += ']'
       # log
       if self._log:
