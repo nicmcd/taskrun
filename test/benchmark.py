@@ -103,8 +103,8 @@ elapsed = stop - start
 print('tasks per second: {0:.3f}'
       .format(num / elapsed))
 
-# Grid task
-print('\n*** GridTask ***')
+# Cluster task
+print('\n*** ClusterTask ***')
 try:
   subprocess.call('qstat')  # will trigger FileNotFoundError
   gnum = 3
@@ -112,7 +112,7 @@ try:
   start = time.clock()
   for idx in range(gnum):
     nm = 'Task_{0:04d}'.format(idx)
-    gt = taskrun.GridTask(tm, nm, 'touch output_{0}'.format(nm))
+    gt = taskrun.ClusterTask(tm, nm, 'touch output_{0}'.format(nm), mode='sge')
   stop = time.clock()
   elapsed = stop - start
   print('setup time: {0:.3f}s'.format(elapsed))
@@ -124,4 +124,4 @@ try:
   print('tasks per second: {0:.3f}'
         .format(gnum / elapsed))
 except FileNotFoundError:
-  print('qstat/qsub not installed, not performing GridTask benchmark')
+  print('qstat/qsub not installed, not performing ClusterTask benchmark')

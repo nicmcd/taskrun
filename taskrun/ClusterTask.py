@@ -36,15 +36,14 @@ import subprocess
 
 from .Task import Task
 
-class GridTask(Task):
+class ClusterTask(Task):
   """
-  This class is a Task that runs as a grid process. See
-  http://gridscheduler.sourceforge.net/
+  This class is a Task that runs as a cluster process.
   """
 
-  def __init__(self, manager, name, command):
+  def __init__(self, manager, name, command, mode):
     """
-    This instiates a Gridobject with a subprocess command
+    This instiates a ClusterTask object with a subprocess command
 
     Args:
       manager (TaskManager) : passed to Task.__init__()
@@ -52,12 +51,14 @@ class GridTask(Task):
       command (str)         : the command to be run
     """
 
-    super(GridTask, self).__init__(manager, name)
+    super(ClusterTask, self).__init__(manager, name)
     self._command = command
+    self._mode = mode
+    assert(self._mode in ['sge'])
     self._stdout_file = None
     self._stderr_file = None
     self._queues = set()
-    self._grid_resources = dict()
+    self._cluster_resources = dict()
     self.stdout = None
     self.stderr = None
     self._proc = None
@@ -135,22 +136,22 @@ class GridTask(Task):
     self._queues = set(value)
 
   @property
-  def grid_resources(self):
+  def cluster_resources(self):
     """
     Returns:
-      (dict<str,str>) : the resources in the grid
+      (dict<str,str>) : the resources in the cluster
     """
-    return self._grid_resources
+    return self._cluster_resources
 
-  @grid_resources.setter
-  def grid_resources(self, value):
+  @cluster_resources.setter
+  def cluster_resources(self, value):
     """
-    Sets the grid resources for this task
+    Sets the cluster resources for this task
 
     Args:
       value (strs): the resources
     """
-    self._grid_resources = dict(value)
+    self._cluster_resources = dict(value)
 
   def describe(self):
     """
@@ -160,32 +161,39 @@ class GridTask(Task):
 
   def _build_command(self):
     """
-    This builds the command string for this grid task.
+    This builds the command string for this cluster task.
 
     Returns:
       (str) : the full command line
     """
-    cmd = ['qsub',
-           '-V',            # copy full environment
-           '-b', 'yes',     # execute binary file
-           '-sync', 'yes',  # wait for job to complete before exiting
-           '-cwd',          # use current working directory
-           '-N', self.name] # name of the task
-    if self._stdout_file:
-      cmd.extend(['-o', self._stdout_file])
+
+    # SGE cluster task
+    if mode == 'sge':
+      cmd = ['qsub',
+             '-V',            # copy full environment
+             '-b', 'yes',     # execute binary file
+             '-sync', 'yes',  # wait for job to complete before exiting
+             '-cwd',          # use current working directory
+             '-N', self.name] # name of the task
+      if self._stdout_file:
+        cmd.extend(['-o', self._stdout_file])
+      else:
+        cmd.extend(['-o', os.devnull])
+      if self._stderr_file:
+        cmd.extend(['-e', self._stderr_file])
+      else:
+        cmd.extend(['-e', os.devnull])
+      if len(self._queues) > 0:
+        cmd.extend(['-q', ','.join(self._queues)])
+      if len(self._cluster_resources) > 0:
+        cmd.extend(['-l', ','.join(
+          ['{0}={1}'.format(k, v) for k, v in self._cluster_resources.items()])])
+      cmd.append(self._command)
+      return ' '.join(cmd)
+
+    # programmer error
     else:
-      cmd.extend(['-o', os.devnull])
-    if self._stderr_file:
-      cmd.extend(['-e', self._stderr_file])
-    else:
-      cmd.extend(['-e', os.devnull])
-    if len(self._queues) > 0:
-      cmd.extend(['-q', ','.join(self._queues)])
-    if len(self._grid_resources) > 0:
-      cmd.extend(['-l', ','.join(
-        ['{0}={1}'.format(k, v) for k, v in self._grid_resources.items()])])
-    cmd.append(self._command)
-    return ' '.join(cmd)
+      assert(False)
 
   def execute(self):
     """

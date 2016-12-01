@@ -28,6 +28,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
+from .ClusterTask import ClusterTask
 from .Condition import Condition
 from .CounterResource import CounterResource
 from .CpuTimeResource import CpuTimeResource
@@ -38,7 +39,6 @@ from .FileHashDatabase import FileHashDatabase
 from .FileModificationCondition import FileModificationCondition
 from .FunctionCondition import FunctionCondition
 from .FunctionTask import FunctionTask
-from .GridTask import GridTask
 from .MemoryResource import MemoryResource
 from .NopTask import NopTask
 from .Observer import Observer
