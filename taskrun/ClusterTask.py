@@ -53,8 +53,8 @@ class ClusterTask(Task):
 
     super(ClusterTask, self).__init__(manager, name)
     self._command = command
+    assert mode in ['sge'], 'invalid scheduler name: ' + mode
     self._mode = mode
-    assert(self._mode in ['sge'])
     self._stdout_file = None
     self._stderr_file = None
     self._queues = set()
@@ -168,7 +168,7 @@ class ClusterTask(Task):
     """
 
     # SGE cluster task
-    if mode == 'sge':
+    if self._mode == 'sge':
       cmd = ['qsub',
              '-V',            # copy full environment
              '-b', 'yes',     # execute binary file
@@ -187,13 +187,14 @@ class ClusterTask(Task):
         cmd.extend(['-q', ','.join(self._queues)])
       if len(self._cluster_resources) > 0:
         cmd.extend(['-l', ','.join(
-          ['{0}={1}'.format(k, v) for k, v in self._cluster_resources.items()])])
+          ['{0}={1}'.format(k, v)
+           for k, v in self._cluster_resources.items()])])
       cmd.append(self._command)
       return ' '.join(cmd)
 
     # programmer error
     else:
-      assert(False)
+      assert False
 
   def execute(self):
     """

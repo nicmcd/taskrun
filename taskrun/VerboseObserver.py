@@ -32,7 +32,6 @@
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 from enum import Enum, unique
-import datetime
 import sys
 import time
 
@@ -67,7 +66,7 @@ class VerboseObserver(Observer):
   """
 
   def __init__(self, verbosity=Verbosity.ALL, description=False, summary=True,
-               time=True, log=None):
+               timer=True, log=None):
     """
     Constructs an Observer
 
@@ -87,7 +86,7 @@ class VerboseObserver(Observer):
     self._bypassed_tasks = 0
     self._failed_tasks = 0
     self._summary = summary
-    self._time = time
+    self._timer = timer
     self._times = {}
     self._start_time = None
     self._log = log
@@ -107,7 +106,7 @@ class VerboseObserver(Observer):
     See Observer.task_started()
     """
 
-    if self._time:
+    if self._timer:
       self._times[task] = time.time()
 
     if (self._verbosity is Verbosity.START or
@@ -152,7 +151,7 @@ class VerboseObserver(Observer):
     See Observer.task_completed()
     """
 
-    if self._time:
+    if self._timer:
       task_time = time.time() - self._times.pop(task)
 
     self._finished_tasks += 1
@@ -162,7 +161,7 @@ class VerboseObserver(Observer):
       # format the output string
       text = '[Completed: {0}'.format(task.name)
       # optionally add the time
-      if self._time:
+      if self._timer:
         text += ' {0}'.format(_time_string(task_time))
       text += ']'
       # optionally add the description
@@ -183,7 +182,7 @@ class VerboseObserver(Observer):
     See Observer.task_failed()
     """
 
-    if self._time:
+    if self._timer:
       task_time = time.time() - self._times.pop(task)
 
     self._finished_tasks += 1
@@ -192,7 +191,7 @@ class VerboseObserver(Observer):
       # format the output string
       text = '[Failed: {0}'.format(task.name)
       # optionally add the time
-      if self._time:
+      if self._timer:
         text += ' {0}'.format(_time_string(task_time))
       text += ']'
       # add the description
@@ -235,7 +234,7 @@ class VerboseObserver(Observer):
         self._finished_tasks / self._total_tasks * 100.0,
         self._finished_tasks, self._total_tasks)
       # optionally add the estimated time to complete
-      if self._time:
+      if self._timer:
         run_time = time.time() - self._start_time
         exec_rate = (self._successful_tasks + self._failed_tasks) / run_time
         if exec_rate == 0.0:
@@ -290,15 +289,15 @@ class VerboseObserver(Observer):
         text = colored(text, 'red')
       print(text)
 
-def _time_string(time):
+def _time_string(total_seconds):
   """
   This returns a string representing the elapsed time given
 
   Args:
-    time: the elapsed time
+    total_seconds: the elapsed time in seconds
   """
 
-  days, rem = divmod(time, 60 * 60 * 24)
+  days, rem = divmod(total_seconds, 60 * 60 * 24)
   hours, rem = divmod(rem, 60 * 60)
   minutes, seconds = divmod(rem, 60)
   if days > 0:
