@@ -147,7 +147,10 @@ class ProcessTask(Task):
     else:
       stdout_fd = subprocess.PIPE
     if self._stderr_file:
-      stderr_fd = open(self._stderr_file, 'w')
+      if self._stderr_file.lower() == 'stdout':
+        stderr_fd = subprocess.STDOUT
+      else:
+        stderr_fd = open(self._stderr_file, 'w')
     else:
       stderr_fd = subprocess.PIPE
 
@@ -167,7 +170,7 @@ class ProcessTask(Task):
     if self._stdout_file:
       #pylint: disable=maybe-no-member
       stdout_fd.close()
-    if self._stderr_file:
+    if self._stderr_file and not self._stderr_file.lower() == 'stdout':
       #pylint: disable=maybe-no-member
       stderr_fd.close()
 
