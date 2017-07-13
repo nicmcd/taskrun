@@ -31,6 +31,7 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
+import random
 import threading
 import time
 from .FailureMode import FailureMode
@@ -77,6 +78,39 @@ class TaskManager(object):
     # pass info to the observer
     for observer in self._observers:
       observer.task_added(task)
+
+  def randomize(self):
+    """
+    This randomizes the task list
+    """
+    assert self._running is False
+
+    if len(self._waiting_tasks) > 1:
+      SAMPLES = min(5, len(self._waiting_tasks))
+
+      # get random samples
+      random_indices = []
+      random_samples = []
+      for rnd in range(SAMPLES):
+        random_index = random.choice(range(len(self._waiting_tasks)))
+        random_indices.append(random_index)
+        random_samples.append(self._waiting_tasks[random_index].name)
+
+      # shuffles until unique
+      while True:
+        # shuffle
+        random.shuffle(self._waiting_tasks)
+
+        # compare samples
+        match = True
+        for index, random_index in enumerate(random_indices):
+          random_sample = random_samples[index]
+          shuffled_sample = self._waiting_tasks[random_index].name
+          if shuffled_sample != random_sample:
+            match = False
+            break
+        if not match:
+          break
 
   def _probe_ready(self):
     """
