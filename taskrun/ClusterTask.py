@@ -34,7 +34,7 @@ from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 import os
 import subprocess
-
+import re
 from .Task import Task
 
 class ClusterTask(Task):
@@ -54,7 +54,7 @@ class ClusterTask(Task):
 
     super(ClusterTask, self).__init__(manager, name)
     self._command = command
-    assert mode in ['sge'], 'invalid scheduler name: ' + mode
+    assert mode in ['sge', 'lsf'], 'invalid scheduler name: ' + mode
     self._mode = mode
     self._stdout_file = None
     self._stderr_file = None
@@ -192,7 +192,24 @@ class ClusterTask(Task):
            for k, v in self._cluster_resources.items()])])
       cmd.append(self._command)
       return ' '.join(cmd)
-
+    elif self._mode == 'lsf':
+      cmd = ['bsub', '-J', self.name] # name of the task
+      if self._stdout_file:
+        cmd.extend(['-o', self._stdout_file])
+      else:
+        cmd.extend(['-o', os.devnull])
+      if self._stderr_file:
+        cmd.extend(['-e', self._stderr_file])
+      else:
+        cmd.extend(['-e', os.devnull])
+      if len(self._queues) > 0:
+        cmd.extend(['-q', ','.join(self._queues)])
+      if len(self._cluster_resources) > 0:
+        cmd.extend(
+        ['{0} {1}'.format(k, v) for k, v in self._cluster_resources.items()])
+      cmd.append("--")
+      cmd.append(re.sub('"', '\\"', self._command))
+      return ' '.join(cmd)
     # programmer error
     else:
       assert False
