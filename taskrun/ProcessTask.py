@@ -150,6 +150,8 @@ class ProcessTask(Task):
     if self._stderr_file:
       if self._stderr_file.lower() == 'stdout':
         stderr_fd = subprocess.STDOUT
+      elif self._stderr_file == self._stdout_file:
+        stderr_fd = stdout_fd
       else:
         stderr_fd = open(self._stderr_file, 'w')
     else:
