@@ -80,6 +80,20 @@ class TaskManager(object):
     for observer in self._observers:
       observer.task_added(task)
 
+  def get_task(self, name):
+    """
+    Returns a waiting task specified by name
+    Undefined behavior if multiple equal named tasks exist
+
+    Args:
+      name (str) : the name of the task
+    """
+    assert self._running is False
+    for task in self._waiting_tasks:
+      if task.name == name:
+        return task
+    return None
+
   def randomize(self):
     """
     This randomizes the task list
