@@ -36,6 +36,7 @@ import random
 import threading
 import time
 from .FailureMode import FailureMode
+from .Task import Task
 
 
 class TaskManager(object):
@@ -55,7 +56,7 @@ class TaskManager(object):
 
     self._running = False
     self._waiting_tasks = []
-    self._ready_tasks = []
+    self._ready_tasks = [[] for x in range(Task.kMaxPriority)]
     self._running_tasks = []
     self._filter_tasks = []
     self._resource_manager = resource_manager
@@ -155,7 +156,7 @@ class TaskManager(object):
       else:
         # transfer from waiting to ready list
         self._waiting_tasks.remove(task)
-        self._ready_tasks.append(task)
+        self._ready_tasks[task.priority].append(task)
 
       # notify waiting threads
       self._condition_variable.notify()
@@ -233,15 +234,17 @@ class TaskManager(object):
         # clear out waiting and ready lists
         self._filter_tasks.extend(self._waiting_tasks)
         self._waiting_tasks = []
-        self._filter_tasks.extend(self._ready_tasks)
-        self._ready_tasks = []
+        for priority in range(Task.kMaxPriority):
+          self._filter_tasks.extend(self._ready_tasks[priority])
+          self._ready_tasks[priority] = []
 
       elif self._failure_mode is FailureMode.PASSIVE_FAIL:
         # clear out waiting and ready lists
         self._filter_tasks.extend(self._waiting_tasks)
         self._waiting_tasks = []
-        self._filter_tasks.extend(self._ready_tasks)
-        self._ready_tasks = []
+        for priority in range(Task.kMaxPriority):
+          self._filter_tasks.extend(self._ready_tasks[priority])
+          self._ready_tasks[priority] = []
 
       elif self._failure_mode is FailureMode.ACTIVE_CONTINUE:
         # remove all tasks that depend on this task (BFS)
@@ -250,7 +253,8 @@ class TaskManager(object):
         visited = set()
         while len(visit) > 0:
           curr = visit.pop()
-          assert curr not in self._ready_tasks
+          for priority in range(Task.kMaxPriority):
+            assert curr not in self._ready_tasks[priority]
           assert curr not in self._running_tasks
           visited.add(curr)
           for dep in curr.get_dependents():
@@ -319,26 +323,23 @@ class TaskManager(object):
       with self._condition_variable:
         # check if we are done
         if (len(self._waiting_tasks) == 0 and
-            len(self._ready_tasks) == 0 and
+            sum(map(len, self._ready_tasks)) == 0 and
             len(self._running_tasks) == 0): # and
             #len(self._filter_tasks) == 0):
           break
 
         # wait for a ready task
-        if len(self._ready_tasks) == 0:
+        if sum(map(len, self._ready_tasks)) == 0:
           self._condition_variable.wait()
           continue
 
         # find the highest priority task in FIFO order
-        next_task = self._ready_tasks[0]
-        for task in self._ready_tasks[1:]:
-          if (next_task.priority is None and
-              task.priority is not None):
-            next_task = task
-          elif (next_task.priority is not None and
-                task.priority is not None and
-                task.priority > next_task.priority):
-            next_task = task
+        next_task = None
+        for priority in reversed(range(Task.kMaxPriority)):
+          if len(self._ready_tasks[priority]) > 0:
+            next_task = self._ready_tasks[priority][0]
+            break;
+        assert next_task is not None
 
         # if not being bypassed, check if there enough resources to run the task
         #  on success, the resource will have been used
@@ -349,7 +350,7 @@ class TaskManager(object):
           continue
 
         # transfer from ready to running
-        self._ready_tasks.remove(next_task)
+        self._ready_tasks[next_task.priority].remove(next_task)
         self._running_tasks.append(next_task)
 
         # signal started or bypassed
