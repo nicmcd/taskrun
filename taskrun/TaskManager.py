@@ -45,7 +45,8 @@ class TaskManager(object):
   """
 
   def __init__(self, resource_manager=None, observers=None,
-               failure_mode=FailureMode.AGGRESSIVE_FAIL):
+               failure_mode=FailureMode.AGGRESSIVE_FAIL,
+               priority_levels=16):
     """
     Constructs a TaskManager object
 
@@ -56,7 +57,10 @@ class TaskManager(object):
 
     self._running = False
     self._waiting_tasks = []
-    self._ready_tasks = [[] for x in range(Task.kMaxPriority)]
+    assert isinstance(priority_levels, int) and priority_levels > 0, \
+      'priority_levels must be an int > 0'
+    self._priority_levels = priority_levels
+    self._ready_tasks = [[] for x in range(self._priority_levels)]
     self._running_tasks = []
     self._filter_tasks = []
     self._resource_manager = resource_manager
@@ -156,6 +160,8 @@ class TaskManager(object):
       else:
         # transfer from waiting to ready list
         self._waiting_tasks.remove(task)
+        assert task.priority < self._priority_levels, \
+          'task.priority must be less than priority_levels'
         self._ready_tasks[task.priority].append(task)
 
       # notify waiting threads
@@ -234,7 +240,7 @@ class TaskManager(object):
         # clear out waiting and ready lists
         self._filter_tasks.extend(self._waiting_tasks)
         self._waiting_tasks = []
-        for priority in range(Task.kMaxPriority):
+        for priority in range(self._priority_levels):
           self._filter_tasks.extend(self._ready_tasks[priority])
           self._ready_tasks[priority] = []
 
@@ -242,7 +248,7 @@ class TaskManager(object):
         # clear out waiting and ready lists
         self._filter_tasks.extend(self._waiting_tasks)
         self._waiting_tasks = []
-        for priority in range(Task.kMaxPriority):
+        for priority in range(self._priority_levels):
           self._filter_tasks.extend(self._ready_tasks[priority])
           self._ready_tasks[priority] = []
 
@@ -253,7 +259,7 @@ class TaskManager(object):
         visited = set()
         while len(visit) > 0:
           curr = visit.pop()
-          for priority in range(Task.kMaxPriority):
+          for priority in range(self._priority_levels):
             assert curr not in self._ready_tasks[priority]
           assert curr not in self._running_tasks
           visited.add(curr)
@@ -333,9 +339,9 @@ class TaskManager(object):
           self._condition_variable.wait()
           continue
 
-        # find the highest priority task in FIFO order
+        # find the highest priority task in FIFO order within priority levels
         next_task = None
-        for priority in reversed(range(Task.kMaxPriority)):
+        for priority in reversed(range(self._priority_levels)):
           if len(self._ready_tasks[priority]) > 0:
             next_task = self._ready_tasks[priority][0]
             break;

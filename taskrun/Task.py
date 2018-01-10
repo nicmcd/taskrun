@@ -42,8 +42,6 @@ class Task(threading.Thread):
   Each task notifies all tasks that are dependent on it upon completion
   """
 
-  kMaxPriority = 15
-
   def __init__(self, manager, name):
     """
     This instantiates a Task object, which is "abstract"
@@ -81,10 +79,8 @@ class Task(threading.Thread):
     Args:
       value (comparable) : the new priority
     """
-    assert isinstance(value, int), \
-      'priority must be an int, {} is not'.format(value)
-    assert value >= 0 and value <= Task.kMaxPriority, \
-      'priority must be >= 0 and <= {}'.format(Task.kMaxPriority)
+    assert isinstance(value, int) and value >= 0, \
+      'priority must be an int >= 0, {} is not'.format(value)
     self._priority = value
 
   @property
@@ -214,7 +210,7 @@ class Task(threading.Thread):
         self._bypass = False
         return self._bypass
       else:
-        # default to bypassing unless atleast one condition says to runs
+        # default to bypassing unless at least one condition says to run
         self._bypass = True
         for condition in self.conditions:
           if condition.check():

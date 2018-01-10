@@ -101,3 +101,29 @@ class PrioritiesTestCase(unittest.TestCase):
     t4.priority = 2
     tm.run_tasks()
     self.assertTrue(ob.ok())
+
+  def test_pri5(self):
+    tm = taskrun.TaskManager(priority_levels=3)
+    t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
+    t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.02')
+    t1.priority = 2
+    t2.priority = 1
+    success = True
+    try:
+      tm.run_tasks()
+    except AssertionError:
+      success = False
+    self.assertTrue(success)
+
+  def test_pri6(self):
+    tm = taskrun.TaskManager(priority_levels=2)
+    t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
+    t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.02')
+    t1.priority = 2
+    t2.priority = 1
+    success = True
+    try:
+      tm.run_tasks()
+    except AssertionError:
+      success = False
+    self.assertFalse(success)
