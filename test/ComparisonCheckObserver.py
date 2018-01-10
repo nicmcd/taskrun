@@ -41,6 +41,7 @@ class ComparisonCheckObserver(taskrun.Observer):
     self._comparisons = comparisons
     self._actual = {}
     self._verbose = verbose
+    self._counter = 0
 
   def reinit(self, events, comparisons):
     assert len(self._actual) == 0
@@ -51,7 +52,8 @@ class ComparisonCheckObserver(taskrun.Observer):
     if self._verbose:
       print(s)
     assert s not in self._actual
-    self._actual[s] = time.clock()
+    self._actual[s] = self._counter
+    self._counter += 1
     self._events -= 1
 
   def task_started(self, task):
@@ -83,11 +85,11 @@ class ComparisonCheckObserver(taskrun.Observer):
           print('{0} didn\'t occur'.format(other))
           return False
         if comp == '<':
-          if not self._actual[curr] < self._actual[other]:
+          if not (self._actual[curr] < self._actual[other]):
             print('failure: {0}'.format(comparison))
             return False
         elif comp == '>':
-          if not self._actual[curr] > self._actual[other]:
+          if not (self._actual[curr] > self._actual[other]):
             print('failure: {0}'.format(comparison))
             return False
         else:
