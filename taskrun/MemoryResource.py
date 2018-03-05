@@ -47,7 +47,7 @@ class MemoryResource(Resource):
 
   def __init__(self, name, default, total):
     """
-    Constructs a CounterResource object
+    Constructs a MemoryResource object
 
     Args:
       name (str)    : the name of the resource

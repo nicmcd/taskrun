@@ -46,6 +46,8 @@ from .Observer import Observer
 from .ProcessTask import ProcessTask
 from .Resource import Resource
 from .ResourceManager import ResourceManager
+from .SlurmResource import SlurmResource
+from .SlurmTask import SlurmTask
 from .Task import Task
 from .TaskManager import TaskManager
 from .VerboseObserver import VerboseObserver
