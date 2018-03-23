@@ -90,6 +90,7 @@ class VerboseObserver(Observer):
     self._timer = timer
     self._times = {}
     self._start_time = None
+    self._end_time = None
     self._log = log
 
     assert isinstance(verbosity, Verbosity), \
@@ -222,6 +223,9 @@ class VerboseObserver(Observer):
     """
     See Observer.run_complete()
     """
+
+    self._end_time = time.time()
+
     if self._summary:
       self._show_summary()
 
@@ -265,6 +269,12 @@ class VerboseObserver(Observer):
       print(text)
 
       text = '  Total      : {0}'.format(self._total_tasks)
+      if self._log:
+        print(text, file=self._log)
+      print(text)
+
+      text = '  Time       : {0}'.format(
+        _time_string(self._end_time - self._start_time))
       if self._log:
         print(text, file=self._log)
       print(text)
