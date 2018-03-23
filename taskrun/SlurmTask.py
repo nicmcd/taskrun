@@ -59,6 +59,7 @@ class SlurmTask(Task):
     self.stderr = None
     self._proc = None
     self._node = None
+    self._wrappers = []
 
   @property
   def command(self):
@@ -132,6 +133,15 @@ class SlurmTask(Task):
     """
     self._node = node
 
+  def wrap(self, wrapper):
+    """
+    Adds a command wrapper
+
+    Args:
+      wrapper (str) : should have a single format insert
+    """
+    self._wrappers.append(wrapper)
+
   def describe(self):
     """
     See Task.describe()
@@ -146,9 +156,14 @@ class SlurmTask(Task):
       (str) : the full command line
     """
 
+    # wrap the command
+    cmd = self._command
+    for wrap in self._wrappers:
+      cmd = wrap.format(cmd)
+
     # build srun command
-    cmd = 'srun -N 1 -n 1 --nodelist={0} -- {1}'.format(
-      self._node, self._command)
+    cmd = ('srun --nodes 1 --ntasks 1 --nodelist={0} -- {1}'
+           .format(self._node, cmd))
     return cmd
 
   def execute(self):
