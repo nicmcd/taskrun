@@ -32,6 +32,7 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
+from collections import deque
 import math
 import os
 import resource
@@ -141,7 +142,16 @@ class SlurmResource(Resource):
     assert (int(os.environ['SLURM_NTASKS']) ==
             (len(nodes) * self._threads_per_node))
 
-    # create map of remaining number of threads for each node
+    # create mapping of remaining number of threads for each node
+    #  this is a list of deques where the top level list is indexed
+    #  by the number of remaining threads. each sublist is a list of all
+    #  nodes that fit in the category.
+    self._threads = [deque() for x in range(self._threads_per_node + 1)]
+    for node in nodes:
+      self._threads[self._threads_per_node].append(node)
+
+    # create a map of remaining number of threads for each node directly
+    #  this is the opposite mapping of '_threads'
     self._nodes = {}
     for node in nodes:
       self._nodes[node] = self._threads_per_node
@@ -160,16 +170,24 @@ class SlurmResource(Resource):
     if uses is None:
       uses = self.default
 
-    # ensure it isn't asking for too much
+    # ensure it isn't asking for too much or too little
     if uses > self._threads_per_node:
       raise ValueError('task \'{0}\' uses {1} threads of resource \'{2}\''
                        ' but there is only {3} threads per node'
                        .format(task.name, uses, self.name,
                                self._threads_per_node))
+    elif uses < 1:
+      raise ValueError('task \'{0}\' is asking for {1} threads of resource '
+                       '\'{2}\''.format(task.name, uses, self.name))
 
-    # attempt to find a node to fit in
-    for node in self._nodes:
-      if uses <= self._nodes[node]:
+    # attempt to find a node to fit in, search backwards
+    for available_threads in reversed(range(0, self._threads_per_node + 1)):
+      # check if all remaining nodes are too busy
+      if uses > available_threads:
+        break;
+
+      # check if there is at least one node that could satisfy this job
+      if len(self._threads[available_threads]) > 0:
         return True
     return False
 
@@ -187,18 +205,34 @@ class SlurmResource(Resource):
     if uses is None:
       uses = self.default
 
-    # ensure it isn't asking for too much
+    # ensure it isn't asking for too much or too little
     if uses > self._threads_per_node:
       raise ValueError('task \'{0}\' uses {1} threads of resource \'{2}\''
                        ' but there is only {3} threads per node'
                        .format(task.name, uses, self.name,
                                self._threads_per_node))
+    elif uses < 1:
+      raise ValueError('task \'{0}\' is asking for {1} threads of resource '
+                       '\'{2}\''.format(task.name, uses, self.name))
 
-    # attempt to find a node to fit in
-    for node in self._nodes:
-      if uses <= self._nodes[node]:
-        # reduce the count of threads
-        self._nodes[node] -= uses
+    # attempt to find a node to fit in, search backwards
+    for available_threads in reversed(range(0, self._threads_per_node + 1)):
+      # check if all remaining nodes are too busy
+      if uses > available_threads:
+        break;
+
+      # check if there is at least one node that could satisfy this job
+      if len(self._threads[available_threads]) > 0:
+        # pop a node off
+        node = self._threads[available_threads].popleft()
+        assert self._nodes[node] == available_threads
+
+        # use the node, put into different slot
+        new_available = available_threads - uses
+        self._threads[new_available].append(node)
+        self._nodes[node] = new_available
+
+        # assign the task to the node
         task.node = node
         return True
     return False
@@ -216,8 +250,12 @@ class SlurmResource(Resource):
     uses = task.resource(self.name)
     if uses is None:
       uses = self.default
-    assert uses <= self._threads_per_node
+    assert uses <= self._threads_per_node and uses > 0
 
     # give back threads to node
     assert task.node in self._nodes
-    self._nodes[task.node] += uses
+    available = self._nodes[task.node]
+    self._threads[available].remove(task.node)
+    available += uses
+    self._threads[available].append(task.node)
+    self._nodes[task.node] = available
