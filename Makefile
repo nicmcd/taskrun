@@ -30,8 +30,6 @@ benchmark:
 	python3 test/benchmark.py
 
 count:
-	@echo "taskrun/ - "$(shell echo taskrun/*.py | wc -w)" files"
-	@wc taskrun/*.py | sort -n -k1
-	@echo ""
-	@echo "test/ - "$(shell echo test/*.py | wc -w)" files"
-	@wc test/*.py | sort -n -k1
+	@wc taskrun/*.py test/*.py | sort -n -k1
+	@echo "files : "$(shell echo taskrun/*.py test/*.py | wc -w)
+	@echo "commits : "$(shell git rev-list HEAD --count) 
