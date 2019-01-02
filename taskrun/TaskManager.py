@@ -69,6 +69,7 @@ class TaskManager(object):
       self._observers = [ob for ob in observers]
     self._condition_variable = threading.Condition()
     self._failure_mode = FailureMode.create(failure_mode)
+    self._failed = False
 
   def add_task(self, task):
     """
@@ -229,6 +230,8 @@ class TaskManager(object):
 
     # handle the failure
     with self._condition_variable:
+      self._failed = True
+
       # handle failure based on failure mode
       if self._failure_mode is FailureMode.AGGRESSIVE_FAIL:
         # kill all the currently running tasks
@@ -315,6 +318,7 @@ class TaskManager(object):
     """
     assert self._running is False
     self._running = True
+    self._failed = False
 
     # ask the tasks if they are ready to run (find root tasks)
     self._probe_ready()
@@ -381,3 +385,6 @@ class TaskManager(object):
     # inform all observers of run completion
     for observer in self._observers:
       observer.run_complete()
+
+    # return True iff all tasks reported success, False otherwise
+    return not self._failed
