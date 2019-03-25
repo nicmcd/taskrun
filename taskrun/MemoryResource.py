@@ -36,10 +36,9 @@ import math
 import resource
 import psutil
 from .ProcessTask import ProcessTask
-from .Resource import Resource
+from .CounterResource import CounterResource
 
-
-class MemoryResource(Resource):
+class MemoryResource(CounterResource):
   """
   This class implements a memory resource. This implementation enforces the
   memory usage by using the Python3 resource.RLIMIT_AS
@@ -47,65 +46,24 @@ class MemoryResource(Resource):
 
   def __init__(self, name, default, total):
     """
-    Constructs a CounterResource object
+    Constructs a MemoryResource object
 
     Args:
       name (str)    : the name of the resource
       default (num) : default value of tasks that don't specify it (in GiB)
       total (num)   : total available to be used by tasks (in GiB)
     """
-    super(MemoryResource, self).__init__(name, default)
-    self._total = total
-    self._amount = total
+    super(MemoryResource, self).__init__(name, default, total)
 
-  def can_use(self, task):
+  def _task_used(self, task, uses):
     """
-    See Resource.can_use()
+    see CounterResource._task_used()
     """
-    uses = task.resource(self.name)
-    if uses is None:
-      uses = self.default
-
-    if uses > self._total:
-      raise ValueError('task \'{0}\' uses {1} units of resource \'{2}\''
-                       ' but there is only {3} units total'
-                       .format(task.name, uses, self.name,
-                               self._total))
-    return uses <= self._amount
-
-  def use(self, task):
-    """
-    See Resource.use()
-    """
-    uses = task.resource(self.name)
-    if uses is None:
-      uses = self.default
-
-    if uses > self._total:
-      raise ValueError('task \'{0}\' uses {1} units of resource \'{2}\''
-                       ' but there is only {3} units total'
-                       .format(task.name, uses, self.name,
-                               self._total))
-    if uses <= self._amount:
-      self._amount -= uses
-
-      # if this is a ProcessTask, enforce memory limit
-      if isinstance(task, ProcessTask):
-        membytes = int(uses * 1024 * 1024 * 1024)
-        task.add_prefunc(lambda: (limit_mem(membytes)))
-      return True
-    else:
-      return False
-
-  def release(self, task):
-    """
-    See Resource.release()
-    """
-    uses = task.resource(self.name)
-    if uses is None:
-      uses = self.default
-    self._amount += uses
-    assert self._amount <= self._total
+    # if this is a ProcessTask, enforce memory limit
+    if isinstance(task, ProcessTask):
+      assert uses > 0.0, 'ProcessTasks must use some memory!'
+      membytes = int(uses * 1024 * 1024 * 1024)
+      task.add_prefunc(lambda: (limit_mem(membytes)))
 
   def current_available_memory_gib():
     """
@@ -115,9 +73,7 @@ class MemoryResource(Resource):
     Returns:
       (float) : amount of available memory in GiB
     """
-    return math.floor((psutil.virtual_memory().available) /
-                      (1024 * 1024 * 1024))
-
+    return psutil.virtual_memory().available / (1024 * 1024 * 1024)
 
 def limit_mem(membytes):
   """

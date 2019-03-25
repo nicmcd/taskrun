@@ -11,6 +11,10 @@ void usage(const char* exe) {
 }
 
 int main(int argc, char** argv) {
+  // turn off buffered output on stdout and stderr
+  setbuf(stdout, nullptr);
+  setbuf(stderr, nullptr);
+
   for (int i = 0; i < argc; i++) {
     if ((std::string(argv[i]) == "-h") ||
         (std::string(argv[i]) == "--help") ||

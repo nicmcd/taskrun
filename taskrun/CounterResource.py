@@ -34,7 +34,6 @@ from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 from .Resource import Resource
 
-
 class CounterResource(Resource):
   """
   This class implements a counter as a resource
@@ -52,6 +51,7 @@ class CounterResource(Resource):
     super(CounterResource, self).__init__(name, default)
     self._total = total
     self._amount = total
+    self._tolerance = float(self._total) / 1e6
 
   def can_use(self, task):
     """
@@ -61,12 +61,12 @@ class CounterResource(Resource):
     if uses is None:
       uses = self.default
 
-    if uses > self._total:
+    if (uses - self._total) > self._tolerance:
       raise ValueError('task \'{0}\' uses {1} units of resource \'{2}\''
                        ' but there is only {3} units total'
                        .format(task.name, uses, self.name,
                                self._total))
-    return uses <= self._amount
+    return (self._amount - uses) > -self._tolerance
 
   def use(self, task):
     """
@@ -76,13 +76,20 @@ class CounterResource(Resource):
     if uses is None:
       uses = self.default
 
-    if uses > self._total:
+    if (uses - self._total) > self._tolerance:
       raise ValueError('task \'{0}\' uses {1} units of resource \'{2}\''
                        ' but there is only {3} units total'
                        .format(task.name, uses, self.name,
                                self._total))
-    if uses <= self._amount:
+    if (self._amount - uses) > -self._tolerance:
+      # use and saturate at zero within tolerance
       self._amount -= uses
+      if self._amount < 0.0:
+        assert abs(self._amount) < self._tolerance
+        self._amount = 0.0
+
+      # perform _task_used specialization
+      self._task_used(task, uses)
       return True
     else:
       return False
@@ -95,4 +102,26 @@ class CounterResource(Resource):
     if uses is None:
       uses = self.default
     self._amount += uses
-    assert self._amount <= self._total
+
+    # Repeated floating point rounding errors might make amount be greater than
+    #  total. Use a near compare, then saturate at total.
+    if self._amount > self._total:
+      assert abs(self._amount - self._total) < self._tolerance
+      self._amount = self._total
+
+    # perform _task_released specialization
+    self._task_released(task, uses)
+
+  def _task_used(self, task, uses):
+    """
+    This is a function that subclasses can override for specialization.
+    This gets called just after the task used the resource.
+    """
+    pass
+
+  def _task_released(self, task, uses):
+    """
+    This is a function that subclasses can override for specialization.
+    This gets called just after the task released the resource.
+    """
+    pass
