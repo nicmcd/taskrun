@@ -53,6 +53,14 @@ class CounterResource(Resource):
     self._amount = total
     self._tolerance = float(self._total) / 1e6
 
+  @property
+  def total(self):
+    return self._total
+
+  @property
+  def used(self):
+    return self._total - self._amount
+
   def can_use(self, task):
     """
     See Resource.can_use()

@@ -34,6 +34,7 @@ from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 from .ComparisonCheckObserver import ComparisonCheckObserver
 from .OrderCheckObserver import OrderCheckObserver
+import random
 import unittest
 import taskrun
 
@@ -150,9 +151,9 @@ class ResourcesTestCase(unittest.TestCase):
     self.assertTrue(ob.ok())
 
   def test_res7(self):
-    rm = taskrun.ResourceManager(
-      taskrun.CounterResource('core', 9999, 4),
-      taskrun.CounterResource('mem', 9999, 8000))
+    cr = taskrun.CounterResource('core', 9999, 4)
+    cm = taskrun.CounterResource('mem', 9999, 8000)
+    rm = taskrun.ResourceManager(cr, cm)
     ob = ComparisonCheckObserver(8,
                                  ['+t1 < +t2 +t3 +t4 -t4 -t3 -t2 -t1',
                                   '+t2 < +t3 +t4 -t4 -t3 -t2 -t1',
@@ -174,3 +175,20 @@ class ResourcesTestCase(unittest.TestCase):
     t4.priority = 1
     tm.run_tasks()
     self.assertTrue(ob.ok())
+    self.assertEqual(cr.total, 4)
+    self.assertEqual(cr.used, 0)
+    self.assertEqual(cm.total, 8000)
+    self.assertEqual(cm.used, 0)
+
+  def test_res8(self):
+    for div in [1, 2, 3, 10, 25, 50, 100, 187]:
+      cr = taskrun.CounterResource('foo', 4.3/div, 4.3)
+      rm = taskrun.ResourceManager(cr)
+      tm = taskrun.TaskManager(resource_manager=rm)
+      rnd = random.Random(12345678)
+      for t in range(10000):
+        cmd = 'usleep {}'.format(rnd.gauss(1000, 500))
+        taskrun.ProcessTask(tm, str(t), cmd)
+      tm.run_tasks()
+      self.assertEqual(cr.total, 4.3)
+      self.assertEqual(cr.used, 0)
