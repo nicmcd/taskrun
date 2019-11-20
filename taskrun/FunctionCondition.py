@@ -57,4 +57,4 @@ class FunctionCondition(Condition):
     Anything except True is interpreted as False
     """
 
-    return self._func(self._args, self._kwargs) is True
+    return self._func(*self._args, **self._kwargs) is True
