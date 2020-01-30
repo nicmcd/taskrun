@@ -190,19 +190,30 @@ class VerboseObserver(Observer):
     self._finished_tasks += 1
     self._failed_tasks += 1
     if self._verbosity is not Verbosity.NONE:
-      # format the output string
-      text = '[Failed: {0}'.format(task.name)
-      # optionally add the time
-      if self._timer:
-        text += ' {0}'.format(_time_string(task_time))
-      text += ']'
-      # add the description
-      text += '\n  Description: {0}'.format(task.describe())
-      # append the error
-      if isinstance(errors, int):
-        text += '\n  Return: {0}'.format(str(errors))
+      if task.killed:
+        # format the output string
+        text = '[Killed: {0}'.format(task.name)
+        # optionally add the time
+        if self._timer:
+          text += ' {0}'.format(_time_string(task_time))
+        text += ']'
+        # optionally add the description
+        if self._description:
+          text += '\n  {0}'.format(task.describe())
       else:
-        text += '\n  Message: {0}'.format(str(errors))
+        # format the output string
+        text = '[Failed: {0}'.format(task.name)
+        # optionally add the time
+        if self._timer:
+          text += ' {0}'.format(_time_string(task_time))
+        text += ']'
+        # add the description
+        text += '\n  Description: {0}'.format(task.describe())
+        # append the error
+        if isinstance(errors, int):
+          text += '\n  Return: {0}'.format(str(errors))
+        else:
+          text += '\n  Message: {0}'.format(str(errors))
       # log
       if self._log:
         print(text, file=self._log)
