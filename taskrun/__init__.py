@@ -49,6 +49,5 @@ from .ResourceManager import ResourceManager
 from .Task import Task
 from .TaskManager import TaskManager
 from .VerboseObserver import VerboseObserver
-from .VerboseObserver import Verbosity
 
 __version__ = '3.0.0'

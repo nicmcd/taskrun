@@ -89,6 +89,16 @@ class Observer(object):
 
     Args:
       task (Task): the task that failed
+      errors     : an errors to be reported
+    """
+    pass
+
+  def task_killed(self, task):
+    """
+    Notification of task task was killed
+
+    Args:
+      task (Task): the task that failed
     """
     pass
 

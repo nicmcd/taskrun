@@ -32,7 +32,6 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-from enum import Enum, unique
 import sys
 import time
 
@@ -48,53 +47,41 @@ except ImportError:
 USE_TERM_COLOR &= sys.stdout.isatty()
 
 
-@unique
-class Verbosity(Enum):
-  """
-  This class creates sets verbosity for the VerbosityObserver
-  """
-
-  NONE = 0  # no output
-  FAILURE = 1  # only failures
-  START = 2  # starts and failures
-  COMPLETE = 3  # completes, bypasses, and failures
-  ALL = 4  # starts, completes, bypasses, failures, and progress
-
-
 class VerboseObserver(Observer):
   """
-  This class is an observer for just printing what is happening
+  This class is an observer for printing what is happening
   """
 
-  def __init__(self, verbosity=Verbosity.ALL, description=False, summary=True,
-               timer=True, log=None):
+  def __init__(self, timer=True, log=None, show_starts=True,
+               show_completes=True, show_bypasses=True, show_failures=True,
+               show_kills=False, show_progress=True, show_summary=True,
+               show_description=False):
     """
     Constructs an Observer
 
     Note: descriptions are always shown on error
-
-    Args:
-      verbosity (Verbosity) : the verbosity mode
-      description (bool)    : add the task description to the print out
     """
 
     super(VerboseObserver, self).__init__()
-    self._verbosity = verbosity
-    self._description = description
     self._total_tasks = 0
     self._finished_tasks = 0
     self._successful_tasks = 0
     self._bypassed_tasks = 0
     self._failed_tasks = 0
-    self._summary = summary
+    self._killed_tasks = 0
     self._timer = timer
     self._times = {}
     self._start_time = None
     self._end_time = None
     self._log = log
-
-    assert isinstance(verbosity, Verbosity), \
-      'verbosity must be a Verbosity type'
+    self._show_starts = show_starts
+    self._show_completes = show_completes
+    self._show_bypasses = show_bypasses
+    self._show_failures = show_failures
+    self._show_kills = show_kills
+    self._show_progress = show_progress
+    self._show_summary = show_summary
+    self._show_description = show_description
 
   def task_added(self, task):
     """
@@ -111,12 +98,11 @@ class VerboseObserver(Observer):
     if self._timer:
       self._times[task] = time.time()
 
-    if (self._verbosity is Verbosity.START or
-        self._verbosity is Verbosity.ALL):
+    if self._show_starts:
       # format the output string
       text = '[Started: {0}]'.format(task.name)
       # optionally add the description
-      if self._description:
+      if self._show_description:
         text += ' {0}'.format(task.describe())
       # log
       if self._log:
@@ -131,12 +117,11 @@ class VerboseObserver(Observer):
 
     self._finished_tasks += 1
     self._bypassed_tasks += 1
-    if (self._verbosity is Verbosity.COMPLETE or
-        self._verbosity is Verbosity.ALL):
+    if self._show_bypasses:
       # format the output string
       text = '[Bypassed: {0}]'.format(task.name)
       # optionally add the description
-      if self._description:
+      if self._show_description:
         text += ' {0}'.format(task.describe())
       # log
       if self._log:
@@ -158,8 +143,7 @@ class VerboseObserver(Observer):
 
     self._finished_tasks += 1
     self._successful_tasks += 1
-    if (self._verbosity is Verbosity.COMPLETE or
-        self._verbosity is Verbosity.ALL):
+    if self._show_completes:
       # format the output string
       text = '[Completed: {0}'.format(task.name)
       # optionally add the time
@@ -167,7 +151,7 @@ class VerboseObserver(Observer):
         text += ' {0}'.format(_time_string(task_time))
       text += ']'
       # optionally add the description
-      if self._description:
+      if self._show_description:
         text += '\n  {0}'.format(task.describe())
       # log
       if self._log:
@@ -189,7 +173,7 @@ class VerboseObserver(Observer):
 
     self._finished_tasks += 1
     self._failed_tasks += 1
-    if self._verbosity is not Verbosity.NONE:
+    if self._show_failures:
       # format the output string
       text = '[Failed: {0}'.format(task.name)
       # optionally add the time
@@ -213,6 +197,35 @@ class VerboseObserver(Observer):
 
     self._progress()
 
+  def task_killed(self, task):
+    """
+    See Observer.task_killed()
+    """
+
+    if self._timer:
+      task_time = time.time() - self._times.pop(task)
+
+    self._finished_tasks += 1
+    self._killed_tasks += 1
+    if self._show_kills:
+      # format the output string
+      text = '[Killed: {0}'.format(task.name)
+      # optionally add the time
+      if self._timer:
+        text += ' {0}'.format(_time_string(task_time))
+      text += ']'
+      # add the description
+      text += '\n  Description: {0}'.format(task.describe())
+      # log
+      if self._log:
+        print(text, file=self._log)
+      # print
+      if USE_TERM_COLOR:
+        text = colored(text, 'red')
+      print(text)
+
+    self._progress()
+
   def run_starting(self):
     """
     See Observer.run_starting()
@@ -226,22 +239,22 @@ class VerboseObserver(Observer):
 
     self._end_time = time.time()
 
-    if self._summary:
-      self._show_summary()
+    self._summary()
 
   def _progress(self):
     """
     This prints the progress of the tasks
     """
 
-    if self._verbosity is Verbosity.ALL:
+    if self._show_progress:
       text = '[Progress: {0:3.2f}% {1}/{2}'.format(
         self._finished_tasks / self._total_tasks * 100.0,
         self._finished_tasks, self._total_tasks)
       # optionally add the estimated time to complete
       if self._timer:
         run_time = time.time() - self._start_time
-        exec_rate = (self._successful_tasks + self._failed_tasks) / run_time
+        exec_rate = (self._successful_tasks + self._failed_tasks +
+                     self._killed_tasks) / run_time
         if exec_rate == 0.0:
           text += ' INFINITY'
         else:
@@ -256,13 +269,12 @@ class VerboseObserver(Observer):
         text = colored(text, 'magenta')
       print(text)
 
-  def _show_summary(self):
+  def _summary(self):
     """
     This prints the summary of the tasks' execution
     """
 
-    if (self._verbosity is Verbosity.COMPLETE or
-        self._verbosity is Verbosity.ALL):
+    if self._show_summary:
       text = '\nTask Summary:'
       if self._log:
         print(text, file=self._log)
@@ -294,6 +306,13 @@ class VerboseObserver(Observer):
       print(text)
 
       text = '  Failed     : {0}'.format(self._failed_tasks)
+      if self._log:
+        print(text, file=self._log)
+      if USE_TERM_COLOR:
+        text = colored(text, 'red')
+      print(text)
+
+      text = '  Killed     : {0}'.format(self._killed_tasks)
       if self._log:
         print(text, file=self._log)
       if USE_TERM_COLOR:

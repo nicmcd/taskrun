@@ -73,7 +73,7 @@ class MemoryResourcesTestCase(unittest.TestCase):
     t1.resources = {'ram': 0.5}
     tm.run_tasks()
     self.assertTrue(t1.stdout.find('+blocks=4') >= 0)
-    self.assertTrue(t1.stdout.find('+blocks=5') < 0)
+    self.assertTrue(t1.stdout.find('+blocks=6') < 0)
     self.assertTrue(t1.stdout.find('all allocated') < 0)
     self.assertTrue(ob.ok())
 

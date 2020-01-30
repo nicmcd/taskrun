@@ -40,6 +40,8 @@ class OrderCheckObserver(taskrun.Observer):
     self._ok = True
     self._actual = []
     self._verbose = verbose
+    if self._verbose:
+      print()
 
   def next(self, s):
     if self._verbose:
@@ -60,6 +62,9 @@ class OrderCheckObserver(taskrun.Observer):
 
   def task_failed(self, task, errors):
     self.next('!{0}'.format(task.name))
+
+  def task_killed(self, task):
+    self.next('${0}'.format(task.name))
 
   def ok(self):
     if self._verbose:
