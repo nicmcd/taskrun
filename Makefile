@@ -17,13 +17,16 @@ clean:
 lint:
 	pylint -r n taskrun
 
-test: test/testprogs/alloclots test/testprogs/burncycles
+test: test/testprogs/alloclots test/testprogs/burncycles test/testprogs/besleepy
 	python3 -m unittest -v -f
 
 test/testprogs/alloclots: test/testprogs/alloclots.cc
 	$(MAKE) -C test/testprogs/
 
 test/testprogs/burncycles: test/testprogs/burncycles.cc
+	$(MAKE) -C test/testprogs/
+
+test/testprogs/besleepy: test/testprogs/besleepy.cc
 	$(MAKE) -C test/testprogs/
 
 benchmark:

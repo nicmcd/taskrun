@@ -1,4 +1,4 @@
-all: alloclots burncycles
+all: alloclots burncycles besleepy
 
 alloclots: alloclots.cc
 	g++ -Wall -Wextra -pedantic -std=c++11 -O3 -g -o alloclots alloclots.cc
@@ -10,4 +10,4 @@ besleepy: besleepy.cc
 	g++ -Wall -Wextra -pedantic -std=c++11 -O3 -g -o besleepy besleepy.cc
 
 clean:
-	rm -f alloclots burncycles
+	rm -f alloclots burncycles besleepy

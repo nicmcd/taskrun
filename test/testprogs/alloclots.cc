@@ -1,3 +1,4 @@
+#include <csignal>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
