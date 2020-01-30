@@ -226,6 +226,24 @@ class TaskManager(object):
     Args:
       task (Task) : the task that encountered errors
     """
+    self._task_error(task, errors)
+
+  def task_killed(self, task):
+    """
+    This function is called by a task when it has been killed
+
+    Args:
+      task (Task) : the task that was killed
+    """
+    self._task_error(task, None)
+
+  def _task_error(self, task, errors):
+    """
+    This function is called when a task fails or is killed
+
+    Args:
+      task (Task) : the task that failed or was killed
+    """
     assert self._running is True
 
     # handle the failure
@@ -282,7 +300,10 @@ class TaskManager(object):
 
       # pass info to the observer
       for observer in self._observers:
-        observer.task_failed(task, errors)
+        if task.killed:
+          observer.task_killed(task)
+        else:
+          observer.task_failed(task, errors)
 
       # clean up the task
       self._task_done(task)

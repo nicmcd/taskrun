@@ -134,18 +134,18 @@ class FailuresTestCase(unittest.TestCase):
 
   def test_aggressive_4wide(self):
     ob = ComparisonCheckObserver(8,
-                                 ['+t1 < +t2 +t3 +t4 !t3 !t4 !t2 !t1',
+                                 ['+t1 < +t2 +t3 +t4 !t3 $t4 $t2 $t1',
                                   '+t2 > +t1',
-                                  '+t2 < +t3 +t4 !t3 !t4 !t2 !t1',
+                                  '+t2 < +t3 +t4 !t3 $t4 $t2 $t1',
                                   '+t3 > +t2 +t1',
-                                  '+t3 < +t4 !t3 !t4 !t2 !t1',
+                                  '+t3 < +t4 !t3 $t4 $t2 $t1',
                                   '+t4 > +t3 +t2 +t1',
-                                  '+t4 < !t3 !t4 !t2 !t1',
+                                  '+t4 < !t3 $t4 $t2 $t1',
                                   '!t3 > +t4 +t3 +t2 +t1',
-                                  '!t3 < !t4 !t2 !t1',
-                                  '!t4 > !t3 +t4 +t3 +t2 +t1',
-                                  '!t2 > !t3 +t4 +t3 +t2 +t1',
-                                  '!t1 > !t3 +t4 +t3 +t2 +t1'],
+                                  '!t3 < $t4 $t2 $t1',
+                                  '$t4 > !t3 +t4 +t3 +t2 +t1',
+                                  '$t2 > !t3 +t4 +t3 +t2 +t1',
+                                  '$t1 > !t3 +t4 +t3 +t2 +t1'],
                                  verbose=False)
     tm = taskrun.TaskManager(observers=[ob], failure_mode='aggressive_fail')
     t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.04')
@@ -241,18 +241,18 @@ class FailuresTestCase(unittest.TestCase):
 
   def test_aggressive_multiroottree_wide(self):
     ob = ComparisonCheckObserver(8,
-                                 ['+t1 < +t2 +t3 +t4 !t3 !t4 !t2 !t1',
+                                 ['+t1 < +t2 +t3 +t4 !t3 $t4 $t2 $t1',
                                   '+t2 > +t1',
-                                  '+t2 < +t3 +t4 !t3 !t4 !t2 !t1',
+                                  '+t2 < +t3 +t4 !t3 $t4 $t2 $t1',
                                   '+t3 > +t2 +t1',
-                                  '+t3 < +t4 !t3 !t4 !t2 !t1',
+                                  '+t3 < +t4 !t3 $t4 $t2 $t1',
                                   '+t4 > +t3 +t2 +t1',
-                                  '+t4 < !t3 !t4 !t2 !t1',
+                                  '+t4 < !t3 $t4 $t2 $t1',
                                   '!t3 > +t4 +t3 +t2 +t1',
-                                  '!t3 < !t4 !t2 !t1',
-                                  '!t4 > !t3 +t4 +t3 +t2 +t1',
-                                  '!t2 > !t3 +t4 +t3 +t2 +t1',
-                                  '!t1 > !t3 +t4 +t3 +t2 +t1'],
+                                  '!t3 < $t4 $t2 $t1',
+                                  '$t4 > !t3 +t4 +t3 +t2 +t1',
+                                  '$t2 > !t3 +t4 +t3 +t2 +t1',
+                                  '$t1 > !t3 +t4 +t3 +t2 +t1'],
                                  verbose=False)
     rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 1000))
     tm = taskrun.TaskManager(observers=[ob], resource_manager=rm,
@@ -551,5 +551,74 @@ class FailuresTestCase(unittest.TestCase):
     t3b.add_dependency(t3)
     t3ba = taskrun.ProcessTask(tm, 't3ba', '')
     t3ba.add_dependency(t3b)
+    tm.run_tasks()
+    self.assertTrue(ob.ok())
+
+  def make_graph(self, tm):
+    """
+                                   +----+
+                                   |    |
+                             +---> | t4 |
+                             |     |    |
+                             |     +----+
+                   +----+    |
+                   |    | +--+
+              +--> | t2 |
+    +----+    |    |    | +--+     +----+      +----+
+    |    | +--+    +----+    +---> |    |      |    |
+    | t1 |                         | t5 | +--> | t6 |
+    |    | +--+              +---> |    |      |    |
+    +----+    |    +----+    |     +----+      +----+
+              |    |    |    |
+              +--> | t3 | +--+
+                   |    |
+                   +----+
+    """
+    t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.1')
+    t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.3')
+    t3 = taskrun.ProcessTask(tm, 't3', 'sleep 0.1; false')
+    t4 = taskrun.ProcessTask(tm, 't4', 'sleep 0.1')
+    t5 = taskrun.ProcessTask(tm, 't5', 'sleep 0.1')
+    t6 = taskrun.ProcessTask(tm, 't6', 'sleep 0.1')
+    t6.add_dependency(t5)
+    t5.add_dependency(t2)
+    t5.add_dependency(t3)
+    t4.add_dependency(t2)
+    t3.add_dependency(t1)
+    t2.add_dependency(t1)
+
+  def test_graph_active(self):
+    ob = OrderCheckObserver(
+      ['@t1', '@t2', '@t3', '@t4', '@t5', '@t6',
+       '+t1', '-t1', '+t3', '+t2', '!t3', '-t2', '+t4', '-t4'],
+      verbose=False)
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 2))
+    tm = taskrun.TaskManager(observers=[ob], resource_manager=rm,
+                             failure_mode='active_continue')
+    self.make_graph(tm)
+    tm.run_tasks()
+    self.assertTrue(ob.ok())
+
+  def test_graph_passive(self):
+    ob = OrderCheckObserver(
+      ['@t1', '@t2', '@t3', '@t4', '@t5', '@t6',
+       '+t1', '-t1', '+t3', '+t2', '!t3', '-t2'],
+      verbose=False)
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 2))
+    tm = taskrun.TaskManager(observers=[ob], resource_manager=rm,
+                             failure_mode='passive_fail')
+    self.make_graph(tm)
+    tm.run_tasks()
+    self.assertTrue(ob.ok())
+
+  def test_graph_aggressive(self):
+    ob = OrderCheckObserver(
+      ['@t1', '@t2', '@t3', '@t4', '@t5', '@t6',
+       '+t1', '-t1', '+t3', '+t2', '!t3', '$t2'],
+      verbose=False)
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slot', 1, 2))
+    tm = taskrun.TaskManager(observers=[ob], resource_manager=rm,
+                             failure_mode='aggressive_fail')
+    self.make_graph(tm)
     tm.run_tasks()
     self.assertTrue(ob.ok())

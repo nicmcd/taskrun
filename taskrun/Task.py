@@ -235,7 +235,9 @@ class Task(threading.Thread):
         self._errors = ex
 
       # report to the task manager
-      if self._errors is None:
+      if self.killed:
+        self._manager.task_killed(self)
+      elif self._errors is None:
         self._manager.task_completed(self)
       else:
         self._manager.task_failed(self, self._errors)

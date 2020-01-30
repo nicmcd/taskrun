@@ -42,6 +42,8 @@ class ComparisonCheckObserver(taskrun.Observer):
     self._actual = {}
     self._verbose = verbose
     self._counter = 0
+    if self._verbose:
+      print()
 
   def reinit(self, events, comparisons):
     assert len(self._actual) == 0
@@ -67,6 +69,9 @@ class ComparisonCheckObserver(taskrun.Observer):
 
   def task_failed(self, task, errors):
     self.next('!{0}'.format(task.name))
+
+  def task_killed(self, task):
+    self.next('${0}'.format(task.name))
 
   def ok(self):
     if self._events != 0:
