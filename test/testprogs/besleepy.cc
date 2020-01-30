@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <string>
+#include <thread>
 
 void usage(const char* exe) {
   printf("usage:\n  %s seconds granularity\n", exe);
@@ -53,42 +54,11 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  std::chrono::steady_clock::time_point startTime =
-      std::chrono::steady_clock::now();
-  uint64_t lastCount = 0;
-  volatile double a, b, c, d, e, f, z;
-
-  while (true) {
-    // do stupid math
-    a = 1234.21342;
-    b = 87.1243;
-    c = 0.00000123;
-    d = 1e7;
-    e = 1.0;
-    f = 97087.97124390701;
-    z = ((1/c) * (1/d) + f / a + b / (e * 2.0));
-    z *= 3.14159265359;
-
-    // time time snap shot
-    std::chrono::steady_clock::time_point endTime =
-        std::chrono::steady_clock::now();
-    std::chrono::duration<double> elapsedDur =
-        std::chrono::duration_cast<std::chrono::duration<double> >
-        (endTime - startTime);
-    double elapsed = elapsedDur.count();
-
-    // check interval
-    uint64_t currCount = std::floor(elapsed / gran);
-    if (currCount > lastCount) {
-      lastCount = currCount;
-      printf("count=%lu\n", currCount);
-    }
-
-    // check if done
-    if (elapsed > secs) {
-      printf("completed\n");
-      break;
-    }
+  uint64_t microsleep = static_cast<uint64_t>(gran * 1e6);
+  for (int64_t remaining = static_cast<int64_t>(secs / gran);
+       remaining > 0; remaining--) {
+    std::this_thread::sleep_for(std::chrono::microseconds(microsleep));
+    printf("remaining=%li\n", remaining);
   }
 
   return 0;

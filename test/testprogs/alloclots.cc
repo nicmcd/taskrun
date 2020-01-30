@@ -10,10 +10,25 @@ void usage(const char* exe) {
   printf("usage:\n  %s block_size usleep num_blocks\n", exe);
 }
 
+void signalHandler(int signum) {
+  if (signum == SIGABRT) {
+    printf("got SIGABRT\n");
+  } else if (signum == SIGINT) {
+    printf("got SIGINT\n");
+  } else if (signum == SIGTERM) {
+    printf("got SIGTERM\n");
+  }
+  exit(-1);
+}
+
 int main(int argc, char** argv) {
   // turn off buffered output on stdout and stderr
   setbuf(stdout, nullptr);
   setbuf(stderr, nullptr);
+
+  signal(SIGABRT, signalHandler);
+  signal(SIGINT, signalHandler);
+  signal(SIGTERM, signalHandler);
 
   for (int i = 0; i < argc; i++) {
     if ((std::string(argv[i]) == "-h") ||
