@@ -59,7 +59,8 @@ class VerboseObserver(Observer):
     """
     Constructs an Observer
 
-    Note: descriptions are always shown on error
+    Note: if a task fails or is killed and it is set to be shown, the
+          description is always added
     """
 
     super(VerboseObserver, self).__init__()

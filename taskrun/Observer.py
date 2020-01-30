@@ -95,7 +95,7 @@ class Observer(object):
 
   def task_killed(self, task):
     """
-    Notification of task task was killed
+    Notification of a task being killed
 
     Args:
       task (Task): the task that failed

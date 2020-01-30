@@ -226,7 +226,7 @@ class TaskManager(object):
     Args:
       task (Task) : the task that encountered errors
     """
-    self._task_failed_or_killed(task, errors)
+    self._task_error(task, errors)
 
   def task_killed(self, task):
     """
@@ -235,15 +235,14 @@ class TaskManager(object):
     Args:
       task (Task) : the task that was killed
     """
-    self._task_failed_or_killed(task, None)
+    self._task_error(task, None)
 
-  def _task_failed_or_killed(self, task, errors):
+  def _task_error(self, task, errors):
     """
-    This function is called by a task when an error code is returned from
-    the task
+    This function is called when a task fails or is killed
 
     Args:
-      task (Task) : the task that encountered errors
+      task (Task) : the task that failed or was killed
     """
     assert self._running is True
 
