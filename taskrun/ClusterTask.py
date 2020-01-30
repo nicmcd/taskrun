@@ -241,7 +241,7 @@ class ClusterTask(Task):
   def kill(self):
     """
     See Task.kill()
-    This implementation calls subprocess.kill()
+    This implementation calls Popen.terminate()
     """
 
     self.killed = True
@@ -250,6 +250,6 @@ class ClusterTask(Task):
     #  completed
     if self._proc:
       try:
-        self._proc.kill()
+        self._proc.terminate()
       except ProcessLookupError:
         pass
