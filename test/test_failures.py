@@ -622,3 +622,10 @@ class FailuresTestCase(unittest.TestCase):
     self.make_graph(tm)
     tm.run_tasks()
     self.assertTrue(ob.ok())
+
+  def test_exception(self):
+    ob = OrderCheckObserver(['@t1', '+t1', '!t1'])
+    tm = taskrun.TaskManager(observers=[ob], failure_mode='aggressive_fail')
+    t1 = taskrun.FunctionTask(tm, 't1', lambda: 1/0)
+    tm.run_tasks()
+    self.assertTrue(ob.ok())

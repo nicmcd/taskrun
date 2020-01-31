@@ -231,7 +231,7 @@ class Task(threading.Thread):
       # try to execute
       try:
         self._errors = self.execute()
-      except RuntimeError as ex:
+      except Exception as ex:
         self._errors = ex
 
       # report to the task manager
