@@ -231,10 +231,19 @@ class ClusterTask(Task):
     See Task.execute()
     """
 
+    # If we're killed at this point, don't bother starting a new process.
+    if self.killed:
+      return None
+
     # start the command
     cmd = self._build_command()
     self._proc = subprocess.Popen(
       cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+    # We could be killed while we're starting the process above. In this case,
+    # terminate the new process, but still clean up.
+    if self.killed:
+      self._proc.terminate()
 
     # wait for the process to finish, collect output
     self.stdout, self.stderr = self._proc.communicate()
@@ -242,6 +251,14 @@ class ClusterTask(Task):
       self.stdout = self.stdout.decode('utf-8')
     if self.stderr is not None:
       self.stderr = self.stderr.decode('utf-8')
+
+    # close the output files
+    if self._stdout_file:
+      #pylint: disable=maybe-no-member
+      stdout_fd.close()
+    if self._stderr_file and not self._stderr_file.lower() == 'stdout':
+      #pylint: disable=maybe-no-member
+      stderr_fd.close()
 
     # check the return code
     ret = self._proc.returncode

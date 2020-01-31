@@ -37,6 +37,7 @@ from .ComparisonCheckObserver import ComparisonCheckObserver
 import os
 import unittest
 import taskrun
+import time
 
 
 class FailuresTestCase(unittest.TestCase):
@@ -629,3 +630,20 @@ class FailuresTestCase(unittest.TestCase):
     t1 = taskrun.FunctionTask(tm, 't1', lambda: 1/0)
     tm.run_tasks()
     self.assertTrue(ob.ok())
+
+  def test_kill_race(self):
+    rm = taskrun.ResourceManager(taskrun.CounterResource('slots', 1, 200))
+    fm = taskrun.FailureMode.AGGRESSIVE_FAIL
+    tm = taskrun.TaskManager(resource_manager=rm, failure_mode=fm)
+
+    taskrun.ProcessTask(tm, 'tfail', 'sleep 0.01; false')
+    for tid in range(1000):
+      taskrun.ProcessTask(tm, 't' + str(tid), 'sleep 1')
+
+    start_time = time.time()
+    tm.run_tasks()
+    end_time = time.time()
+
+    # Make sure we actually killed everything and exited quickly, and didn't
+    # leave tasks running that should have been killed.
+    self.assertLess(end_time - start_time, 0.5)

@@ -142,6 +142,10 @@ class ProcessTask(Task):
     See Task.execute()
     """
 
+    # If we're killed at this point, don't bother starting a new process.
+    if self.killed:
+      return None
+
     # format stdout and stderr outputs
     if self._stdout_file:
       stdout_fd = open(self._stdout_file, 'w')
@@ -161,6 +165,11 @@ class ProcessTask(Task):
     self._proc = subprocess.Popen(
       self._command, stdout=stdout_fd, stderr=stderr_fd, shell=True,
       preexec_fn=lambda: ([func() for func in self._prefuncs]))
+
+    # We could be killed while we're starting the process above. In this case,
+    # terminate the new process, but still clean up.
+    if self.killed:
+      self._proc.terminate()
 
     # wait for the process to finish, collect output
     self.stdout, self.stderr = self._proc.communicate()
