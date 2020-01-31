@@ -35,6 +35,7 @@ from __future__ import (absolute_import, division,
 import os
 import subprocess
 import re
+import threading
 from .Task import Task
 
 class ClusterTask(Task):
@@ -63,6 +64,7 @@ class ClusterTask(Task):
     self.stdout = None
     self.stderr = None
     self._proc = None
+    self._lock = threading.Lock()
 
   @property
   def command(self):
@@ -231,19 +233,19 @@ class ClusterTask(Task):
     See Task.execute()
     """
 
-    # If we're killed at this point, don't bother starting a new process.
-    if self.killed:
-      return None
+    with self._lock:
+      # If we're killed at this point, don't bother starting a new process.
+      if self.killed:
+        return None
 
-    # start the command
-    cmd = self._build_command()
-    self._proc = subprocess.Popen(
-      cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+      # start the command
+      cmd = self._build_command()
+      self._proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,
+        start_new_session=True)
 
-    # We could be killed while we're starting the process above. In this case,
-    # terminate the new process, but still clean up.
-    if self.killed:
-      self._proc.terminate()
+      # ensures that the subprocess is in a different group
+      assert os.getsid(self._proc.pid) != os.getsid(os.getpid())
 
     # wait for the process to finish, collect output
     self.stdout, self.stderr = self._proc.communicate()
@@ -251,14 +253,6 @@ class ClusterTask(Task):
       self.stdout = self.stdout.decode('utf-8')
     if self.stderr is not None:
       self.stderr = self.stderr.decode('utf-8')
-
-    # close the output files
-    if self._stdout_file:
-      #pylint: disable=maybe-no-member
-      stdout_fd.close()
-    if self._stderr_file and not self._stderr_file.lower() == 'stdout':
-      #pylint: disable=maybe-no-member
-      stderr_fd.close()
 
     # check the return code
     ret = self._proc.returncode
@@ -273,12 +267,12 @@ class ClusterTask(Task):
     This implementation calls Popen.terminate()
     """
 
-    self.killed = True
-
-    # there is a chance the proc hasn't been created yet or has already
-    #  completed
-    if self._proc:
-      try:
-        self._proc.terminate()
-      except ProcessLookupError:
-        pass
+    with self._lock:
+      if not self.killed:
+        self.killed = True
+        # there is a chance the proc hasn't been created yet
+        if self._proc is not None:
+          try:
+            self._proc.terminate()
+          except ProcessLookupError as ex:
+            pass

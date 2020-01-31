@@ -222,7 +222,7 @@ class Task(threading.Thread):
 
   def run(self):
     """
-    This either executes the task of performs the bypass.
+    This either executes the task or performs the bypass.
     """
 
     # execute the task

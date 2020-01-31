@@ -32,7 +32,11 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
+import datetime
+import os
 import random
+import signal
+import sys
 import threading
 import time
 from .FailureMode import FailureMode
@@ -70,6 +74,10 @@ class TaskManager(object):
     self._condition_variable = threading.Condition()
     self._failure_mode = FailureMode.create(failure_mode)
     self._failed = False
+    self._killed = False
+    self._last_signal_time = (datetime.datetime.now() -
+                              datetime.timedelta(seconds = 5))
+    self._pid = os.getpid()
 
   def add_task(self, task):
     """
@@ -226,6 +234,8 @@ class TaskManager(object):
     Args:
       task (Task) : the task that encountered errors
     """
+    assert self._running is True
+
     self._task_error(task, errors)
 
   def task_killed(self, task):
@@ -235,6 +245,8 @@ class TaskManager(object):
     Args:
       task (Task) : the task that was killed
     """
+    assert self._running is True
+
     self._task_error(task, None)
 
   def _task_error(self, task, errors):
@@ -242,79 +254,92 @@ class TaskManager(object):
     This function is called when a task fails or is killed
 
     Args:
-      task (Task) : the task that failed or was killed
+      task (Task) : the task that failed or was killed, None when force error
     """
     assert self._running is True
+    self._failed = True
 
     # handle the failure
     with self._condition_variable:
-      self._failed = True
-
       # handle failure based on failure mode
       if self._failure_mode is FailureMode.AGGRESSIVE_FAIL:
-        # kill all the currently running tasks
-        if not task.killed:
-          for running_task in self._running_tasks:
-            if running_task is not task:
-              running_task.kill()
-
-        # clear out waiting and ready lists
-        self._filter_tasks.extend(self._waiting_tasks)
-        self._waiting_tasks = []
-        for priority in range(self._priority_levels):
-          self._filter_tasks.extend(self._ready_tasks[priority])
-          self._ready_tasks[priority] = []
-
+        self._kill_running(task)
+        self._clear_waiting_and_ready()
       elif self._failure_mode is FailureMode.PASSIVE_FAIL:
-        # clear out waiting and ready lists
-        self._filter_tasks.extend(self._waiting_tasks)
-        self._waiting_tasks = []
-        for priority in range(self._priority_levels):
-          self._filter_tasks.extend(self._ready_tasks[priority])
-          self._ready_tasks[priority] = []
-
+        self._clear_waiting_and_ready()
       elif self._failure_mode is FailureMode.ACTIVE_CONTINUE:
-        # remove all tasks that depend on this task (BFS)
-        visit = []
-        visit.extend(task.get_dependents())
-        visited = set()
-        while len(visit) > 0:
-          curr = visit.pop()
-          for priority in range(self._priority_levels):
-            assert curr not in self._ready_tasks[priority]
-          assert curr not in self._running_tasks
-          visited.add(curr)
-          for dep in curr.get_dependents():
-            if dep not in visited:
-              visit.append(dep)
-          if curr in self._waiting_tasks:
-            self._waiting_tasks.remove(curr)
-            self._filter_tasks.append(curr)
-
+        self._remove_dependent_tasks(task)
       elif self._failure_mode is FailureMode.BLIND_CONTINUE:
-        # do nothing
         pass
-
       else:
         assert False, "programmer error, fire somebody!"
 
       # pass info to the observer
-      for observer in self._observers:
-        if task.killed:
-          observer.task_killed(task)
-        else:
-          observer.task_failed(task, errors)
+      if task:
+        for observer in self._observers:
+          if task.killed:
+            observer.task_killed(task)
+          else:
+            observer.task_failed(task, errors)
 
       # clean up the task
       self._task_done(task)
 
+  def _kill_running(self, task):
+    """
+    Kills all running tasks except for the specified task.
+
+    Args:
+      task (Task) : A task that should be skipped
+    """
+    # kill all the currently running tasks
+    if not self._killed:
+      self._killed = True
+      for running_task in self._running_tasks:
+        if running_task is not task:
+          running_task.kill()
+
+  def _clear_waiting_and_ready(self):
+    """
+    Clears the waiting and ready tasks lists. Adds the tasks to the filtered
+    list.
+    """
+    # clear out waiting and ready lists
+    self._filter_tasks.extend(self._waiting_tasks)
+    self._waiting_tasks = []
+    for priority in range(self._priority_levels):
+      self._filter_tasks.extend(self._ready_tasks[priority])
+      self._ready_tasks[priority] = []
+
+  def _remove_dependent_tasks(self, task):
+    """
+    Removes the dependent tasks of the specified task. Adds the tasks to the
+    filtered list.
+    """
+    # remove all tasks that depend on this task (BFS)
+    visit = []
+    visit.extend(task.get_dependents())
+    visited = set()
+    while len(visit) > 0:
+      curr = visit.pop()
+      for priority in range(self._priority_levels):
+        assert curr not in self._ready_tasks[priority]
+      assert curr not in self._running_tasks
+      visited.add(curr)
+      for dep in curr.get_dependents():
+        if dep not in visited:
+          visit.append(dep)
+      if curr in self._waiting_tasks:
+        self._waiting_tasks.remove(curr)
+        self._filter_tasks.append(curr)
+
   def _task_done(self, task):
     """
-    This method is called by task_completed and task_failed.
+    This method is called by task_completed and task_error.
     This method removes the task from the running list and gives back all
     resources it consumed.
 
-    WARNING: this method must be called while locked on the condition variable
+    WARNING: this method must be called while locked on the condition variable.
 
     Args:
       task (Task) : the task that finished
@@ -322,24 +347,70 @@ class TaskManager(object):
     assert self._running is True
 
     # remove task from running lists
-    self._running_tasks.remove(task)
+    if task:
+      self._running_tasks.remove(task)
 
     # give back resources
-    if not task.bypass:
+    if task and not task.bypass:
       if self._resource_manager is not None:
         self._resource_manager.done(task)
 
     # notify waiting thread
     self._condition_variable.notify()
 
+  def _terminate(self):
+    """
+    This signal the main thread for termination.
+    """
+    self._failure_mode = FailureMode.AGGRESSIVE_FAIL
+    self._task_error(None, None)
+
+  def _set_signal_handlers(self):
+    """
+    Sets the signal handlers for SIGINT and SIGTERM to gracefully shutdown when
+    received. SIGINT also includes a 3 seconds guard window.
+    """
+    handler_block = [False]
+    def handler(signum, frame):
+      if handler_block[0]:
+        return
+      handler_block[0] = True
+      if os.getpid() != self._pid:
+        os._exit(-1)
+        return
+      now = datetime.datetime.now()
+      delta = (now - self._last_signal_time).total_seconds()
+      self._last_signal_time = now
+      if signum == signal.SIGTERM or delta < 3.0:
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        threading.Thread(target=self._terminate).start()
+      else:
+        handler_block[0] = False
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+
+  def _reset_signal_handlers(self):
+    """
+    Resets the changed signal handlers to the default handlers.
+    """
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+
+
   def run_tasks(self):
     """
     This runs all tasks in dependency order and executing with the
-    ResourceManager's discretion
+    ResourceManager's discretion.
+
+    This must be run by the main thread. Will overwrite SIGINT and SIGTERM
+    signal handlers.
     """
     assert self._running is False
     self._running = True
     self._failed = False
+
+    self._set_signal_handlers()
 
     # ask the tasks if they are ready to run (find root tasks)
     self._probe_ready()
@@ -369,7 +440,7 @@ class TaskManager(object):
         for priority in reversed(range(self._priority_levels)):
           if len(self._ready_tasks[priority]) > 0:
             next_task = self._ready_tasks[priority][0]
-            break;
+            break
         assert next_task is not None
 
         # if not being bypassed, check if there enough resources to run the task
@@ -389,6 +460,7 @@ class TaskManager(object):
           self._task_started(next_task)
         else:
           self._task_bypassed(next_task)
+          continue
 
       # at this point, the next_task is either being bypassed or there is enough
       #  resources to execute the task
@@ -406,6 +478,9 @@ class TaskManager(object):
     # inform all observers of run completion
     for observer in self._observers:
       observer.run_complete()
+
+    # reset the signal handlers
+    self._reset_signal_handlers()
 
     # return True iff all tasks reported success, False otherwise
     return not self._failed
