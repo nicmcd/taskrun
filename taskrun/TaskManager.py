@@ -394,8 +394,7 @@ class TaskManager(object):
       self._last_signal_time = now
       if signum == signal.SIGTERM or delta < 3.0:
         # Resets signal handlers to default
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        self._reset_signal_handlers()
 
         # Create a new thread to perform the termination. A separate thread is
         # needed because this signal handler is running within the main thread
