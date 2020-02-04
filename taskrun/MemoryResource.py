@@ -62,12 +62,11 @@ class MemoryResource(CounterResource):
     # if this is a ProcessTask, enforce memory limit
     if isinstance(task, ProcessTask):
       assert uses > 0.0, 'ProcessTasks must use some memory!'
-      if False:  # use later when Python subprocess is smarter
-        membytes = int(uses * 1024 * 1024 * 1024)
-        task.add_prefunc(lambda: (limit_mem(membytes)))
-      else:
-        memkbytes = int(uses * 1024 * 1024)
-        task.command = 'ulimit -v {} && {}'.format(memkbytes, task.command)
+      # TODO(nicmcd): use the following when Python subprocess is fixed
+      # membytes = int(uses * 1024 * 1024 * 1024)
+      # task.add_prefunc(lambda: (limit_mem(membytes)))
+      memkbytes = int(uses * 1024 * 1024)
+      task.command = 'ulimit -v {} && {}'.format(memkbytes, task.command)
 
   def current_available_memory_gib():
     """

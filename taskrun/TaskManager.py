@@ -254,7 +254,7 @@ class TaskManager(object):
     This function is called when a task fails or is killed
 
     Args:
-      task (Task) : the task that failed or was killed, None when force error
+      task (Task) : the task that failed or was killed
     """
     assert self._running is True
     self._failed = True
@@ -275,12 +275,11 @@ class TaskManager(object):
         assert False, "programmer error, fire somebody!"
 
       # pass info to the observer
-      if task:
-        for observer in self._observers:
-          if task.killed:
-            observer.task_killed(task)
-          else:
-            observer.task_failed(task, errors)
+      for observer in self._observers:
+        if task.killed:
+          observer.task_killed(task)
+        else:
+          observer.task_failed(task, errors)
 
       # clean up the task
       self._task_done(task)
@@ -290,7 +289,7 @@ class TaskManager(object):
     Kills all running tasks except for the specified task.
 
     Args:
-      task (Task) : A task that should be skipped
+      task (Task) : A task that should be skipped, or None
     """
     # kill all the currently running tasks
     if not self._killed:
@@ -347,11 +346,10 @@ class TaskManager(object):
     assert self._running is True
 
     # remove task from running lists
-    if task:
-      self._running_tasks.remove(task)
+    self._running_tasks.remove(task)
 
     # give back resources
-    if task and not task.bypass:
+    if not task.bypass:
       if self._resource_manager is not None:
         self._resource_manager.done(task)
 
@@ -362,31 +360,51 @@ class TaskManager(object):
     """
     Executes the procedure for graceful forced shutdown.
     """
-    self._failure_mode = FailureMode.AGGRESSIVE_FAIL
-    self._task_error(None, None)
+    assert self._running is True
+    self._failed = True
+    with self._condition_variable:
+      self._kill_running(None)
+      self._clear_waiting_and_ready()
+      self._condition_variable.notify()
 
   def _set_signal_handlers(self):
     """
     Sets the signal handlers for SIGINT and SIGTERM to gracefully shutdown when
     received. SIGINT also includes a 3 seconds guard window.
     """
-    handler_block = [False]
+    ignore_signal = [False]  # in a list to behave as a reference
     def handler(signum, frame):
-      if handler_block[0]:
+      # Ignores signal if this function is already handling a signal.
+      if ignore_signal[0]:
         return
-      handler_block[0] = True
+      ignore_signal[0] = True
+
+      # Kills the process if the task manager's known pid does not match the pid
+      # of this process. This is for the case where a task uses subprocess to
+      # fork the process but the start_new_session handling hasn't been
+      # completed. It is important to kill the process (exit) so that the signal
+      # isn't ignored.
       if os.getpid() != self._pid:
         os._exit(-1)
         return
+
+      # Tracks the time of the last signal to create a SIGINT time guard of 3s.
       now = datetime.datetime.now()
       delta = (now - self._last_signal_time).total_seconds()
       self._last_signal_time = now
       if signum == signal.SIGTERM or delta < 3.0:
+        # Resets signal handlers to default
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
+
+        # Create a new thread to perform the termination. A separate thread is
+        # needed because this signal handler is running within the main thread
+        # that may or may not have the condition variable acquired. A separate
+        # thread allows this to behave just like a failing task.
         threading.Thread(target=self._terminate).start()
-      else:
-        handler_block[0] = False
+      ignore_signal[0] = False
+
+    # Installs 'handler' as the signal handler for SIGINT and SIGTERM
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
@@ -410,6 +428,7 @@ class TaskManager(object):
     self._running = True
     self._failed = False
 
+    # sets the signal handlers for graceful shutdown
     self._set_signal_handlers()
 
     # ask the tasks if they are ready to run (find root tasks)
@@ -479,7 +498,7 @@ class TaskManager(object):
     for observer in self._observers:
       observer.run_complete()
 
-    # reset the signal handlers
+    # resets the signal handlers to the defaults
     self._reset_signal_handlers()
 
     # return True iff all tasks reported success, False otherwise

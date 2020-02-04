@@ -54,35 +54,33 @@ class SignalTestCase(unittest.TestCase):
 
   def test_sigint_one_ignored(self):
     ob = OrderCheckObserver(
-      ['@t0', '@t1', '@t2', '@t3', '@t4', '@t5', '@t6', '@t7', '@t8', '@t9',
-       '+t0', '-t0', '+t1', '-t1', '+t2', '-t2', '+t3', '-t3', '+t4', '-t4',
-       '+t5', '-t5', '+t6', '-t6', '+t7', '-t7', '+t8', '-t8', '+t9', '-t9'],
+      ['@t0', '@t1', '@t2', '@t3',
+       '+t0', '-t0', '+t1', '-t1', '+t2', '-t2', '+t3', '-t3'],
       verbose=False)
     rm = taskrun.ResourceManager(taskrun.CounterResource('slots', 1, 1))
     tm = taskrun.TaskManager(resource_manager=rm, observers=[ob],
                              failure_mode='blind_continue')
     tasks = []
-    for tid in range(10):
-      tasks.append(taskrun.ProcessTask(tm, 't{}'.format(tid), 'sleep 0.2'))
+    for tid in range(4):
+      tasks.append(taskrun.ProcessTask(tm, 't{}'.format(tid), 'sleep 0.5'))
     pid = os.getpid()
     threading.Thread(
-      target=send_signal, args=(pid, signal.SIGINT, 1.1)).start()
+      target=send_signal, args=(pid, signal.SIGINT, 1.25)).start()
     res = tm.run_tasks()
     self.assertTrue(res)
     self.assertTrue(ob.ok())
 
   def test_sigint_two_ignored(self):
     ob = OrderCheckObserver(
-      ['@t0', '@t1', '@t2', '@t3', '@t4', '@t5', '@t6', '@t7', '@t8', '@t9',
-       '+t0', '-t0', '+t1', '-t1', '+t2', '-t2', '+t3', '-t3', '+t4', '-t4',
-       '+t5', '-t5', '+t6', '-t6', '+t7', '-t7', '+t8', '-t8', '+t9', '-t9'],
+      ['@t0', '@t1', '@t2', '@t3',
+       '+t0', '-t0', '+t1', '-t1', '+t2', '-t2', '+t3', '-t3'],
       verbose=False)
     rm = taskrun.ResourceManager(taskrun.CounterResource('slots', 1, 1))
     tm = taskrun.TaskManager(resource_manager=rm, observers=[ob],
                              failure_mode='blind_continue')
     tasks = []
-    for tid in range(10):
-      tasks.append(taskrun.ProcessTask(tm, 't{}'.format(tid), 'sleep 0.4'))
+    for tid in range(4):
+      tasks.append(taskrun.ProcessTask(tm, 't{}'.format(tid), 'sleep 1.0'))
     pid = os.getpid()
     threading.Thread(
       target=send_signal, args=(pid, signal.SIGINT, 0.150)).start()
@@ -95,57 +93,56 @@ class SignalTestCase(unittest.TestCase):
 
   def test_sigint_two_accepted(self):
     ob = OrderCheckObserver(
-      ['@t0', '@t1', '@t2', '@t3', '@t4', '@t5', '@t6', '@t7', '@t8', '@t9',
-       '+t0', '-t0', '+t1', '-t1', '+t2', '-t2', '+t3', '-t3', '+t4', '-t4',
-       '+t5', '$t5'], verbose=False)
+      ['@t0', '@t1', '@t2', '@t3',
+       '+t0', '-t0', '+t1', '-t1', '+t2', '$t2',],
+      verbose=False)
     rm = taskrun.ResourceManager(taskrun.CounterResource('slots', 1, 1))
     tm = taskrun.TaskManager(resource_manager=rm, observers=[ob],
                              failure_mode='blind_continue')
     tasks = []
-    for tid in range(10):
-      tasks.append(taskrun.ProcessTask(tm, 't{}'.format(tid), 'sleep 0.2'))
+    for tid in range(4):
+      tasks.append(taskrun.ProcessTask(tm, 't{}'.format(tid), 'sleep 0.5'))
     pid = os.getpid()
     threading.Thread(
-      target=send_signal, args=(pid, signal.SIGINT, 0.1)).start()
+      target=send_signal, args=(pid, signal.SIGINT, 0.25)).start()
     threading.Thread(
-      target=send_signal, args=(pid, signal.SIGINT, 1.1)).start()
+      target=send_signal, args=(pid, signal.SIGINT, 1.25)).start()
     res = tm.run_tasks()
     self.assertFalse(res)
     self.assertTrue(ob.ok())
 
   def test_sigterm(self):
     ob = OrderCheckObserver(
-      ['@t0', '@t1', '@t2', '@t3', '@t4', '@t5', '@t6', '@t7', '@t8', '@t9',
-       '+t0', '-t0', '+t1', '-t1', '+t2', '-t2', '+t3', '-t3', '+t4', '-t4',
-       '+t5', '$t5'], verbose=False)
+      ['@t0', '@t1', '@t2', '@t3',
+       '+t0', '-t0', '+t1', '-t1', '+t2', '$t2'],
+      verbose=False)
     rm = taskrun.ResourceManager(taskrun.CounterResource('slots', 1, 1))
     tm = taskrun.TaskManager(resource_manager=rm, observers=[ob],
                              failure_mode='blind_continue')
     tasks = []
-    for tid in range(10):
-      tasks.append(taskrun.ProcessTask(tm, 't{}'.format(tid), 'sleep 0.2'))
+    for tid in range(4):
+      tasks.append(taskrun.ProcessTask(tm, 't{}'.format(tid), 'sleep 0.5'))
     pid = os.getpid()
     threading.Thread(
-      target=send_signal, args=(pid, signal.SIGTERM, 1.1)).start()
+      target=send_signal, args=(pid, signal.SIGTERM, 1.25)).start()
     res = tm.run_tasks()
     self.assertFalse(res)
     self.assertTrue(ob.ok())
 
   def test_sigint_sigterm(self):
     ob = OrderCheckObserver(
-      ['@t0', '@t1', '@t2', '@t3', '@t4', '@t5', '@t6', '@t7', '@t8', '@t9',
-       '+t0', '-t0', '+t1', '-t1', '+t2', '-t2', '+t3', '-t3', '+t4', '-t4',
-       '+t5', '-t5', '+t6', '-t6', '+t7', '-t7', '+t8', '$t8'],
+      ['@t0', '@t1', '@t2', '@t3',
+       '+t0', '-t0', '+t1', '-t1', '+t2', '-t2', '+t3', '$t3'],
       verbose=False)
     rm = taskrun.ResourceManager(taskrun.CounterResource('slots', 1, 1))
     tm = taskrun.TaskManager(resource_manager=rm, observers=[ob],
                              failure_mode='blind_continue')
     tasks = []
-    for tid in range(10):
-      tasks.append(taskrun.ProcessTask(tm, 't{}'.format(tid), 'sleep 0.4'))
+    for tid in range(4):
+      tasks.append(taskrun.ProcessTask(tm, 't{}'.format(tid), 'sleep 1.0'))
     pid = os.getpid()
     threading.Thread(
-      target=send_signal, args=(pid, signal.SIGINT, 0.150)).start()
+      target=send_signal, args=(pid, signal.SIGINT, 0.100)).start()
     threading.Thread(
       target=send_signal, args=(pid, signal.SIGTERM, 3.550)).start()
     res = tm.run_tasks()

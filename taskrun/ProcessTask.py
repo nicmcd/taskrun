@@ -63,7 +63,7 @@ class ProcessTask(Task):
     self._stderr_file = None
     self.stdout = None
     self.stderr = None
-    self.retcode = None
+    self.returncode = None
     self._proc = None
     self._prefuncs = []
     self._lock = threading.Lock()
@@ -173,11 +173,7 @@ class ProcessTask(Task):
       # executes the task command
       self._proc = subprocess.Popen(
         self._command, stdout=stdout_fd, stderr=stderr_fd, shell=True,
-        start_new_session=True)#,
-        #preexec_fn=lambda: ([func() for func in self._prefuncs]))
-
-      # ensures that the subprocess is in a different group
-      assert os.getsid(self._proc.pid) != os.getsid(os.getpid())
+        start_new_session=True)
 
     # wait for the process to finish, collect output
     self.stdout, self.stderr = self._proc.communicate()
@@ -195,11 +191,11 @@ class ProcessTask(Task):
       stderr_fd.close()
 
     # check the return code
-    self.retcode = self._proc.returncode
-    if self.retcode == 0:
+    self.returncode = self._proc.returncode
+    if self.returncode == 0:
       return None
     else:
-      return self.retcode
+      return self.returncode
 
   def kill(self):
     """
