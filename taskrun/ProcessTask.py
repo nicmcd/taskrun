@@ -204,7 +204,8 @@ class ProcessTask(Task):
     """
 
     with self._lock:
-      if not self.killed:
+      # Don't kill if already completed or already killed
+      if self.returncode is None and not self.killed:
         self.killed = True
         # there is a chance the proc hasn't been created yet
         if self._proc is not None:

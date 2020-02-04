@@ -263,7 +263,7 @@ class TaskManager(object):
     with self._condition_variable:
       # handle failure based on failure mode
       if self._failure_mode is FailureMode.AGGRESSIVE_FAIL:
-        self._kill_running(task)
+        self._kill_running()
         self._clear_waiting_and_ready()
       elif self._failure_mode is FailureMode.PASSIVE_FAIL:
         self._clear_waiting_and_ready()
@@ -284,19 +284,15 @@ class TaskManager(object):
       # clean up the task
       self._task_done(task)
 
-  def _kill_running(self, task):
+  def _kill_running(self):
     """
-    Kills all running tasks except for the specified task.
-
-    Args:
-      task (Task) : A task that should be skipped, or None
+    Kills all running tasks
     """
     # kill all the currently running tasks
     if not self._killed:
       self._killed = True
-      for running_task in self._running_tasks:
-        if running_task is not task:
-          running_task.kill()
+      for task in self._running_tasks:
+        task.kill()
 
   def _clear_waiting_and_ready(self):
     """
@@ -363,7 +359,7 @@ class TaskManager(object):
     assert self._running is True
     self._failed = True
     with self._condition_variable:
-      self._kill_running(None)
+      self._kill_running()
       self._clear_waiting_and_ready()
       self._condition_variable.notify()
 
