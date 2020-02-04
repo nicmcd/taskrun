@@ -360,7 +360,7 @@ class TaskManager(object):
 
   def _terminate(self):
     """
-    This signal the main thread for termination.
+    Executes the procedure for graceful forced shutdown.
     """
     self._failure_mode = FailureMode.AGGRESSIVE_FAIL
     self._task_error(None, None)
