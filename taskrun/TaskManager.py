@@ -372,12 +372,13 @@ class TaskManager(object):
     Sets the signal handlers for SIGINT and SIGTERM to gracefully shutdown when
     received. SIGINT also includes a 3 seconds guard window.
     """
-    ignore_signal = [False]  # in a list to behave as a reference
+    ignore_signal = False  # in a list to behave as a reference
     def handler(signum, frame):
       # Ignores signal if this function is already handling a signal.
-      if ignore_signal[0]:
+      nonlocal ignore_signal
+      if ignore_signal:
         return
-      ignore_signal[0] = True
+      ignore_signal = True
 
       # Kills the process if the task manager's known pid does not match the pid
       # of this process. This is for the case where a task uses subprocess to
@@ -401,7 +402,7 @@ class TaskManager(object):
         # that may or may not have the condition variable acquired. A separate
         # thread allows this to behave just like a failing task.
         threading.Thread(target=self._terminate).start()
-      ignore_signal[0] = False
+      ignore_signal = False
 
     # Installs 'handler' as the signal handler for SIGINT and SIGTERM
     signal.signal(signal.SIGINT, handler)
