@@ -63,6 +63,7 @@ class ClusterTask(Task):
     self._cluster_resources = dict()
     self.stdout = None
     self.stderr = None
+    self.returncode = None
     self._proc = None
     self._lock = threading.Lock()
 
@@ -251,11 +252,11 @@ class ClusterTask(Task):
       self.stderr = self.stderr.decode('utf-8')
 
     # check the return code
-    ret = self._proc.returncode
-    if ret == 0:
+    self.returncode = self._proc.returncode
+    if self.returncode == 0:
       return None
     else:
-      return ret
+      return self.returncode
 
   def kill(self):
     """
