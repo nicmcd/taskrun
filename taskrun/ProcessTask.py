@@ -32,7 +32,11 @@
 # Python 3 compatibility
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
+import os
+import signal
 import subprocess
+import threading
+import time
 
 from .Task import Task
 
@@ -59,8 +63,10 @@ class ProcessTask(Task):
     self._stderr_file = None
     self.stdout = None
     self.stderr = None
+    self.returncode = None
     self._proc = None
     self._prefuncs = []
+    self._lock = threading.Lock()
 
   @property
   def command(self):
@@ -123,7 +129,9 @@ class ProcessTask(Task):
     Args:
       func (callable) : a callable to be executed
     """
-    self._prefuncs.append(func)
+    raise NotImplementedError('ProcessTask does not yet support pre-execution '
+                              'functions due to Python subprocess limitations.')
+    #self._prefuncs.append(func)
 
   def describe(self):
     """
@@ -142,34 +150,30 @@ class ProcessTask(Task):
     See Task.execute()
     """
 
-    # If we're killed at this point, don't bother starting a new process.
-    if self.killed:
-      return None
+    with self._lock:
+      # If we're killed at this point, don't bother starting a new process.
+      if self.killed:
+        return None
 
-    # format stdout and stderr outputs
-    if self._stdout_file:
-      stdout_fd = open(self._stdout_file, 'w')
-    else:
-      stdout_fd = subprocess.PIPE
-    if self._stderr_file:
-      if self._stderr_file.lower() == 'stdout':
-        stderr_fd = subprocess.STDOUT
-      elif self._stderr_file == self._stdout_file:
-        stderr_fd = stdout_fd
+      # format stdout and stderr outputs
+      if self._stdout_file:
+        stdout_fd = open(self._stdout_file, 'w')
       else:
-        stderr_fd = open(self._stderr_file, 'w')
-    else:
-      stderr_fd = subprocess.PIPE
+        stdout_fd = subprocess.PIPE
+      if self._stderr_file:
+        if self._stderr_file.lower() == 'stdout':
+          stderr_fd = subprocess.STDOUT
+        elif self._stderr_file == self._stdout_file:
+          stderr_fd = stdout_fd
+        else:
+          stderr_fd = open(self._stderr_file, 'w')
+      else:
+        stderr_fd = subprocess.PIPE
 
-    # execute the task command
-    self._proc = subprocess.Popen(
-      self._command, stdout=stdout_fd, stderr=stderr_fd, shell=True,
-      preexec_fn=lambda: ([func() for func in self._prefuncs]))
-
-    # We could be killed while we're starting the process above. In this case,
-    # terminate the new process, but still clean up.
-    if self.killed:
-      self._proc.terminate()
+      # executes the task command
+      self._proc = subprocess.Popen(
+        self._command, stdout=stdout_fd, stderr=stderr_fd, shell=True,
+        start_new_session=True)
 
     # wait for the process to finish, collect output
     self.stdout, self.stderr = self._proc.communicate()
@@ -187,11 +191,11 @@ class ProcessTask(Task):
       stderr_fd.close()
 
     # check the return code
-    ret = self._proc.returncode
-    if ret == 0:
+    self.returncode = self._proc.returncode
+    if self.returncode == 0:
       return None
     else:
-      return ret
+      return self.returncode
 
   def kill(self):
     """
@@ -199,12 +203,13 @@ class ProcessTask(Task):
     This implementation calls Popen.terminate()
     """
 
-    self.killed = True
-
-    # there is a chance the proc hasn't been created yet or has already
-    #  completed
-    if self._proc:
-      try:
-        self._proc.terminate()
-      except ProcessLookupError:
-        pass
+    with self._lock:
+      # Don't kill if already completed or already killed
+      if self.returncode is None and not self.killed:
+        self.killed = True
+        # there is a chance the proc hasn't been created yet
+        if self._proc is not None:
+          try:
+            self._proc.terminate()
+          except ProcessLookupError as ex:
+            pass

@@ -77,7 +77,10 @@ class CpuTimeResource(Resource):
 
     # enforce CPU time limit on the ProcessTask
     if isinstance(task, ProcessTask):
-      task.add_prefunc(lambda: (limit_cputime(secs)))
+      # TODO(nicmcd): use the following when Python subprocess is fixed
+      # task.add_prefunc(lambda: (limit_cputime(secs)))
+      assert int(secs) > 0
+      task.command = 'ulimit -t {} && {}'.format(int(secs), task.command)
 
     return True
 

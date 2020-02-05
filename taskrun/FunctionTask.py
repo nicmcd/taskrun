@@ -57,6 +57,7 @@ class FunctionTask(Task):
     self._func = func
     self._args = args
     self._kwargs = kwargs
+    self._done = False
 
   def describe(self):
     """
@@ -71,7 +72,9 @@ class FunctionTask(Task):
     See Task.execute()
     """
 
-    return self._func(*self._args, **self._kwargs)
+    self._done = True
+    res = self._func(*self._args, **self._kwargs)
+    return res
 
   def kill(self):
     """
@@ -79,4 +82,5 @@ class FunctionTask(Task):
     This implementation ignores this because it can't kill the function
     call once it has already been made.
     """
-    self.killed = True
+    if not self._done:
+      self.killed = True

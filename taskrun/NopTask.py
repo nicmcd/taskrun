@@ -51,6 +51,7 @@ class NopTask(Task):
     """
 
     super(NopTask, self).__init__(manager, name)
+    self._done = False
 
   def describe(self):
     """
@@ -62,11 +63,12 @@ class NopTask(Task):
     """
     See Task.execute()
     """
-    pass
+    self._done = True
 
   def kill(self):
     """
     See Task.kill()
     This implementation ignores this because there is nothing to kill!
     """
-    self.killed = True
+    if not self._done:
+      self.killed = True

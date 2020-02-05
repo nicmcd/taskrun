@@ -222,7 +222,7 @@ class Task(threading.Thread):
 
   def run(self):
     """
-    This either executes the task of performs the bypass.
+    This either executes the task or performs the bypass.
     """
 
     # execute the task
@@ -255,10 +255,12 @@ class Task(threading.Thread):
 
   def execute(self):
     """
-    Executes this task
+    Executes this task.
+
+    WARNING: subclass implementations
 
     Returns:
-      (None or errors) : None for success, errors on failure
+      (None or errors) : None for success, errors on failure,
     """
     raise NotImplementedError('subclasses should override this!')
 
@@ -267,6 +269,7 @@ class Task(threading.Thread):
     Kills this task. This may or may not be possible, but when it is, it must be
     immediately carryied out.
 
-    WARNING: subclass implementations must set self.killed = True
+    WARNING: subclass implementations must set self.killed = True if the process
+    was actually killed.
     """
     raise NotImplementedError('subclasses should override this!')
