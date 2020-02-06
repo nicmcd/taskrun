@@ -75,7 +75,7 @@ class TaskManager(object):
     self._failure_mode = FailureMode.create(failure_mode)
     self._failed = False
     self._killed = False
-    self._last_signal_time = (datetime.datetime.now() -
+    self._last_sigint_time = (datetime.datetime.now() -
                               datetime.timedelta(seconds = 5))
     self._pid = os.getpid()
 
@@ -363,41 +363,50 @@ class TaskManager(object):
       self._clear_waiting_and_ready()
       self._condition_variable.notify()
 
+  def _handle_signal(self, signum):
+    # Kills the process if the task manager's known pid does not match the pid
+    # of this process. This is for the case where a task uses subprocess to
+    # fork the process but the start_new_session handling hasn't been
+    # completed. It is important to kill the process (exit) so that the signal
+    # isn't ignored.
+    if os.getpid() != self._pid:
+      os._exit(-1)
+      return
+
+    if signum == signal.SIGINT:
+      # Print a newline after the ^C that the user's shell printed
+      print()
+
+      # Tracks the time of the last signal to create a SIGINT time guard of 3s.
+      now = datetime.datetime.now()
+      delta = (now - self._last_sigint_time).total_seconds()
+      self._last_sigint_time = now
+      if delta >= 3.0:
+        print("Press Ctrl-C again within 3 seconds to terminate")
+        return
+
+    # Resets signal handlers to default
+    self._reset_signal_handlers()
+
+    # Create a new thread to perform the termination. A separate thread is
+    # needed because this signal handler is running within the main thread
+    # that may or may not have the condition variable acquired. A separate
+    # thread allows this to behave just like a failing task.
+    threading.Thread(target=self._terminate).start()
+
   def _set_signal_handlers(self):
     """
     Sets the signal handlers for SIGINT and SIGTERM to gracefully shutdown when
     received. SIGINT also includes a 3 seconds guard window.
     """
-    ignore_signal = False  # in a list to behave as a reference
+    ignore_signal = False
     def handler(signum, frame):
       # Ignores signal if this function is already handling a signal.
       nonlocal ignore_signal
       if ignore_signal:
         return
       ignore_signal = True
-
-      # Kills the process if the task manager's known pid does not match the pid
-      # of this process. This is for the case where a task uses subprocess to
-      # fork the process but the start_new_session handling hasn't been
-      # completed. It is important to kill the process (exit) so that the signal
-      # isn't ignored.
-      if os.getpid() != self._pid:
-        os._exit(-1)
-        return
-
-      # Tracks the time of the last signal to create a SIGINT time guard of 3s.
-      now = datetime.datetime.now()
-      delta = (now - self._last_signal_time).total_seconds()
-      self._last_signal_time = now
-      if signum == signal.SIGTERM or delta < 3.0:
-        # Resets signal handlers to default
-        self._reset_signal_handlers()
-
-        # Create a new thread to perform the termination. A separate thread is
-        # needed because this signal handler is running within the main thread
-        # that may or may not have the condition variable acquired. A separate
-        # thread allows this to behave just like a failing task.
-        threading.Thread(target=self._terminate).start()
+      self._handle_signal(signum)
       ignore_signal = False
 
     # Installs 'handler' as the signal handler for SIGINT and SIGTERM
