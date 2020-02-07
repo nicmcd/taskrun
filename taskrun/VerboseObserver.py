@@ -131,8 +131,7 @@ class VerboseObserver(Observer):
       if USE_TERM_COLOR:
         text = colored(text, 'yellow')
       print(text)
-
-    self._progress()
+      self._progress()
 
   def task_completed(self, task):
     """
@@ -161,8 +160,7 @@ class VerboseObserver(Observer):
       if USE_TERM_COLOR:
         text = colored(text, 'green')
       print(text)
-
-    self._progress()
+      self._progress()
 
   def task_failed(self, task, errors):
     """
@@ -195,8 +193,7 @@ class VerboseObserver(Observer):
       if USE_TERM_COLOR:
         text = colored(text, 'red')
       print(text)
-
-    self._progress()
+      self._progress()
 
   def task_killed(self, task):
     """
@@ -224,8 +221,7 @@ class VerboseObserver(Observer):
       if USE_TERM_COLOR:
         text = colored(text, 'red')
       print(text)
-
-    self._progress()
+      self._progress()
 
   def run_starting(self):
     """
