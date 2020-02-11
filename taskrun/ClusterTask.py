@@ -59,6 +59,7 @@ class ClusterTask(Task):
     self._mode = mode
     self._stdout_file = None
     self._stderr_file = None
+    self._log_file = None
     self._queues = set()
     self._cluster_resources = dict()
     self.stdout = None
@@ -120,6 +121,24 @@ class ClusterTask(Task):
       filename (str) : a filename for stderr text
     """
     self._stderr_file = filename
+
+  @property
+  def log_file(self):
+    """
+    Returns:
+      (str) : filename for job log
+    """
+    return self._log_file
+
+  @log_file.setter
+  def log_file(self, filename):
+    """
+    Sets the filename of the job log.
+
+    Args:
+      filename (str) : a filename for job log
+    """
+    self._log_file = filename
 
   @property
   def queues(self):
@@ -214,7 +233,7 @@ class ClusterTask(Task):
       cmd.append(re.sub('"', '\\"', self._command))
       return ' '.join(cmd)
     elif self._mode == 'slurm':
-      cmd = ['srun', '-J', self.name]
+      cmd = ['srun', '-vvvv', '-J', self.name]
       if self._stdout_file:
         cmd.extend(['-o', self._stdout_file])
       else:
@@ -224,6 +243,8 @@ class ClusterTask(Task):
       else:
         cmd.extend(['-e', os.devnull])
       cmd.append(self._command)
+      if self._log_file:
+        cmd.extend(['2>', self._log_file])
       return ' '.join(cmd)
     else:
       assert False
