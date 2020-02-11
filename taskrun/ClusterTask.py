@@ -243,8 +243,6 @@ class ClusterTask(Task):
       else:
         cmd.extend(['-e', os.devnull])
       cmd.append(self._command)
-      if self._log_file:
-        cmd.extend(['2>', self._log_file])
       return ' '.join(cmd)
     else:
       assert False
@@ -259,10 +257,16 @@ class ClusterTask(Task):
       if self.killed:
         return None
 
+      # format stderr output
+      if self._log_file:
+        stderr_fd = open(self._log_file, 'w')
+      else:
+        stderr_fd = subprocess.PIPE
+
       # start the command
       cmd = self._build_command()
       self._proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,
+        cmd, stdout=subprocess.PIPE, stderr=stderr_fd, shell=True,
         start_new_session=True)
 
     # wait for the process to finish, collect output
@@ -271,6 +275,11 @@ class ClusterTask(Task):
       self.stdout = self.stdout.decode('utf-8')
     if self.stderr is not None:
       self.stderr = self.stderr.decode('utf-8')
+
+    # close the output file
+    if self._log_file:
+      #pylint: disable=maybe-no-member
+      stderr_fd.close()
 
     # check the return code
     self.returncode = self._proc.returncode
