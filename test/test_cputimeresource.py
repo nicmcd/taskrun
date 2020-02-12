@@ -76,11 +76,13 @@ class CpuTimeResourcesTestCase(unittest.TestCase):
     ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
     tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
     t1 = taskrun.ProcessTask(
-      tm, 't1', 'test/testprogs/burncycles 3.0 0.1')
+      tm, 't1', 'test/testprogs/burncycles 3.0 0.5')
     t1.resources = {'time': 2}
     tm.run_tasks()
-    self.assertTrue(t1.stdout.find('count=10') >= 0)
-    self.assertTrue(t1.stdout.find('count=20') < 0)
+    self.assertTrue(t1.stdout.find('count=1') >= 0)
+    self.assertTrue(t1.stdout.find('count=2') >= 0)
+    self.assertTrue(t1.stdout.find('count=3') >= 0)
+    self.assertTrue(t1.stdout.find('count=5') < 0)
     self.assertTrue(t1.stdout.find('completed') < 0)
     self.assertTrue(ob.ok())
 
