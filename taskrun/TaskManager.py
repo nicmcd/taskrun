@@ -484,7 +484,7 @@ class TaskManager(object):
           self._task_started(next_task)
         else:
           self._task_bypassed(next_task)
-          continue
+          #continue
 
       # at this point, the next_task is either being bypassed or there is enough
       #  resources to execute the task
