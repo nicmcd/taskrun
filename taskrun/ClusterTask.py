@@ -233,7 +233,7 @@ class ClusterTask(Task):
       cmd.append(re.sub('"', '\\"', self._command))
       return ' '.join(cmd)
     elif self._mode == 'slurm':
-      cmd = ['srun', '-vvvv', '-J', self.name]
+      cmd = ['srun', '-vv', '-J', self.name]
       if self._stdout_file:
         cmd.extend(['-o', self._stdout_file])
       else:
