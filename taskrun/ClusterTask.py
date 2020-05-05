@@ -62,6 +62,7 @@ class ClusterTask(Task):
     self._log_file = None
     self._queues = set()
     self._cluster_resources = dict()
+    self._cluster_options = list()
     self.stdout = None
     self.stderr = None
     self.returncode = None
@@ -176,6 +177,24 @@ class ClusterTask(Task):
     """
     self._cluster_resources = dict(value)
 
+  @property
+  def cluster_options(self):
+    """
+    Returns:
+      (dict<str,str>) : the options in the cluster
+    """
+    return self._cluster_options
+
+  @cluster_options.setter
+  def cluster_options(self, value):
+    """
+    Sets the cluster options for this task
+
+    Args:
+      value (strs): the options
+    """
+    self._cluster_options = list(value)
+
   def describe(self):
     """
     See Task.describe()
@@ -242,6 +261,8 @@ class ClusterTask(Task):
         cmd.extend(['-e', self._stderr_file])
       else:
         cmd.extend(['-e', os.devnull])
+      if self._cluster_options:
+        cmd.extend(self._cluster_options)
       cmd.append(self._command)
       return ' '.join(cmd)
     else:
