@@ -46,13 +46,14 @@ class FileModificationCondition(Condition):
   the input or output files do not exist.
   """
 
-  def __init__(self, inputs=None, outputs=None):
+  def __init__(self, inputs=None, outputs=None, verbose=False):
     """
     This constructs a FileModificationCondition object.
 
     Args:
       inputs (list<str>)           : a list of filenames for the input files
       outputs (list<str>)          : a list of filenames for the output files
+      verbose (bool)               : print the results during check()
     """
     super(FileModificationCondition, self).__init__()
     if inputs is None:
@@ -61,6 +62,7 @@ class FileModificationCondition(Condition):
       outputs = []
     self.inputs = inputs
     self.outputs = outputs
+    self.verbose = verbose
 
   def add_input(self, filename):
     """
@@ -90,18 +92,28 @@ class FileModificationCondition(Condition):
     # check for non-existent output files
     #  get minimum modification time of output files
     mtime = float('INF')
+    mfile = None
     for ofile in self.outputs:
       if not os.path.isfile(ofile):
+        if self.verbose:
+          print('{} does not exist'.format(ofile))
         return True
       else:
-        mtime = min(mtime, os.path.getmtime(ofile))
+        new_mtime = os.path.getmtime(ofile)
+        if new_mtime < mtime:
+          mtime = new_mtime
+          mfile = ofile
 
     # check whether any input file is newer than the minimum output file
-    #  modifcation time
+    #  modification time
     for ifile in self.inputs:
       if not os.path.isfile(ifile):
+        if self.verbose:
+          print('{} does not exist'.format(ifile))
         return True
       if os.path.getmtime(ifile) >= mtime:
+        if self.verbose:
+          print('{} is newer than {}'.format(ifile, mfile))
         return True
 
     # all tests passed, don't need to run task
