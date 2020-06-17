@@ -627,11 +627,12 @@ class FailuresTestCase(unittest.TestCase):
   def test_exception(self):
     for mode in ['aggressive_fail', 'passive_fail', 'active_continue',
                  'blind_continue']:
-      ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
-      tm = taskrun.TaskManager(observers=[ob], failure_mode=mode)
-      t1 = taskrun.FunctionTask(tm, 't1', lambda: 1/0)
-      tm.run_tasks()
-      self.assertTrue(ob.ok())
+      for fork in [False, True]:
+        ob = OrderCheckObserver(['@t1', '+t1', '!t1'], verbose=False)
+        tm = taskrun.TaskManager(observers=[ob], failure_mode=mode)
+        t1 = taskrun.FunctionTask(tm, 't1', fork, lambda: 1/0)
+        tm.run_tasks()
+        self.assertTrue(ob.ok())
 
   def test_kill_race(self):
     rm = taskrun.ResourceManager(taskrun.CounterResource('slots', 1, 200))

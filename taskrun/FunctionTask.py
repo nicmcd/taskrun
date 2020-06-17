@@ -33,27 +33,39 @@
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
+import multiprocessing
+
 from .Task import Task
 
 
 class FunctionTask(Task):
   """
-  This class is a Task that runs as a function call
+  This class is a Task that runs as a function call. Function calls can execute
+  as a parallel thread or in another process.
   """
 
-  def __init__(self, manager, name, func, *args, **kwargs):
+  # this tracks the multiprocessing initialization
+  mp_init = False
+
+  def __init__(self, manager, name, fork, func, *args, **kwargs):
     """
     This instiates a FunctionTask object with a function and arguments
 
     Args:
       manager (TaskManager) : passed to Task.__init__()
       name (str)            : passed to Task.__init__()
+      fork (bool)           : fork a new process for this task
       func (function)       : the function to be executed
       *args                 : passed to func when executed
       **kwargs              : passed to func when executed
     """
 
     super(FunctionTask, self).__init__(manager, name)
+    self._fork = fork
+    if self._fork:
+      if not FunctionTask.mp_init:
+        multiprocessing.set_start_method('forkserver')
+        FunctionTask.mp_init = True
     self._func = func
     self._args = args
     self._kwargs = kwargs
@@ -72,8 +84,18 @@ class FunctionTask(Task):
     See Task.execute()
     """
 
-    self._done = True
-    res = self._func(*self._args, **self._kwargs)
+    if not self.killed:
+      self._done = True
+      if self._fork:
+        proc = multiprocessing.Process(
+          target=self._func, args=self._args, kwargs=self._kwargs)
+        proc.start()
+        proc.join()
+        res = proc.exitcode()
+      else:
+        res = self._func(*self._args, **self._kwargs)
+    if res == 0:
+      res = None
     return res
 
   def kill(self):
