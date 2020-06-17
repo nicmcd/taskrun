@@ -91,12 +91,13 @@ class FunctionTask(Task):
           target=self._func, args=self._args, kwargs=self._kwargs)
         proc.start()
         proc.join()
-        res = proc.exitcode()
+        res = proc.exitcode
       else:
         res = self._func(*self._args, **self._kwargs)
-    if res == 0:
-      res = None
-    return res
+      if res == 0:
+        res = None
+      return res
+    return None
 
   def kill(self):
     """

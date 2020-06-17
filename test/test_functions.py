@@ -64,13 +64,3 @@ class FunctionsTestCase(unittest.TestCase):
     t1 = taskrun.FunctionTask(tm, 't1', True, myfunc, 10, 20, c=True, d=100)
     tm.run_tasks()
     self.assertNotEqual(value, 10 + 20 + 100)
-
-
-    """
-    fd, filename = tempfile.mkstemp()
-    with open(filename, 'w') as fd:
-      print('hello world!\n', file=fd)
-    self.assertTrue(os.path.isfile(filename))
-    tm.run_tasks()
-    self.assertFalse(os.path.isfile(filename))
-    """
