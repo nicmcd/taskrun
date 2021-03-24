@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,9 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
 """
 
-#!/usr/bin/env python3
-
-import multiprocessing
 import os
 import subprocess
 import sys
@@ -51,55 +49,59 @@ def func(first, second, *args, **kwargs):
 
 num = 3000
 cpus = os.cpu_count()
+print('Using {} cpus for benchmarking'.format(cpus))
 assert cpus > 0
-rm = taskrun.ResourceManager(taskrun.CounterResource('cpu', 1, cpus))
-tm = taskrun.TaskManager(resource_manager=rm)
+
+def get_tm():
+  rm = taskrun.ResourceManager(taskrun.CounterResource('cpu', 1, cpus))
+  tm = taskrun.TaskManager(resource_manager=rm)
+  return tm
 
 # Process task
 print('\n*** ProcessTask ***')
-start = time.clock()
+start = time.time()
+tm = get_tm()
 for idx in range(num):
-  taskrun.ProcessTask(tm, 'Task_{0:04d}'.format(idx), '')
-stop = time.clock()
+  taskrun.ProcessTask(tm, 'Task_{0:04d}'.format(idx), 'true')
+stop = time.time()
 elapsed = stop - start
 print('setup time: {0:.3f}s'.format(elapsed))
-
-start = time.clock()
+start = time.time()
 tm.run_tasks()
-stop = time.clock()
+stop = time.time()
 elapsed = stop - start
 print('tasks per second: {0:.3f}'
       .format(num / elapsed))
 
 # Function task
 print('\n*** FunctionTask ***')
-start = time.clock()
+start = time.time()
+tm = get_tm()
 for idx in range(num):
-  taskrun.FunctionTask(tm, 'Task_{0:04d}'.format(idx),
+  taskrun.FunctionTask(tm, 'Task_{0:04d}'.format(idx), False,
                        func, 'you', 'me', 'yall', mom=True, dad=False)
-stop = time.clock()
+stop = time.time()
 elapsed = stop - start
 print('setup time: {0:.3f}s'.format(elapsed))
-
-start = time.clock()
+start = time.time()
 tm.run_tasks()
-stop = time.clock()
+stop = time.time()
 elapsed = stop - start
 print('tasks per second: {0:.3f}'
       .format(num / elapsed))
 
 # Nop task
 print('\n*** NopTask ***')
-start = time.clock()
+start = time.time()
+tm = get_tm()
 for idx in range(num):
   taskrun.NopTask(tm, 'Task_{0:04d}'.format(idx))
-stop = time.clock()
+stop = time.time()
 elapsed = stop - start
 print('setup time: {0:.3f}s'.format(elapsed))
-
-start = time.clock()
+start = time.time()
 tm.run_tasks()
-stop = time.clock()
+stop = time.time()
 elapsed = stop - start
 print('tasks per second: {0:.3f}'
       .format(num / elapsed))
@@ -110,17 +112,18 @@ try:
   subprocess.call('qstat')  # will trigger FileNotFoundError
   gnum = 3
 
-  start = time.clock()
+  start = time.time()
+  tm = get_tm()
   for idx in range(gnum):
     nm = 'Task_{0:04d}'.format(idx)
     gt = taskrun.ClusterTask(tm, nm, 'touch output_{0}'.format(nm), mode='sge')
-  stop = time.clock()
+  stop = time.time()
   elapsed = stop - start
   print('setup time: {0:.3f}s'.format(elapsed))
 
-  start = time.clock()
+  start = time.time()
   tm.run_tasks()
-  stop = time.clock()
+  stop = time.time()
   elapsed = stop - start
   print('tasks per second: {0:.3f}'
         .format(gnum / elapsed))

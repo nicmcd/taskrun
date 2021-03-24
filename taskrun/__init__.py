@@ -29,6 +29,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
 """
 
+import multiprocessing
+multiprocessing.set_start_method('forkserver')
+
 from .ClusterTask import ClusterTask
 from .Condition import Condition
 from .CounterResource import CounterResource
