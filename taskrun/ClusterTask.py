@@ -51,6 +51,7 @@ class ClusterTask(Task):
       manager (TaskManager) : passed to Task.__init__()
       name (str)            : passed to Task.__init__()
       command (str)         : the command to be run
+      mode (str)            : name of cluster scheduler
     """
 
     super(ClusterTask, self).__init__(manager, name)
