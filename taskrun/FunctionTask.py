@@ -44,9 +44,6 @@ class FunctionTask(Task):
   as a parallel thread or in another process.
   """
 
-  # this tracks the multiprocessing initialization
-  mp_init = False
-
   def __init__(self, manager, name, fork, func, *args, **kwargs):
     """
     This instiates a FunctionTask object with a function and arguments
@@ -61,11 +58,8 @@ class FunctionTask(Task):
     """
 
     super(FunctionTask, self).__init__(manager, name)
+    assert isinstance(fork, bool), '"fork" must be a bool'
     self._fork = fork
-    if self._fork:
-      if not FunctionTask.mp_init:
-        multiprocessing.set_start_method('forkserver')
-        FunctionTask.mp_init = True
     self._func = func
     self._args = args
     self._kwargs = kwargs
