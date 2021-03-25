@@ -28,11 +28,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from .Condition import Condition
+from .condition import Condition
 
 
 class FunctionCondition(Condition):
@@ -44,8 +40,7 @@ class FunctionCondition(Condition):
     """
     Constructs a FunctionCondition object
     """
-
-    super(FunctionCondition, self).__init__()
+    super().__init__()
     self._func = func
     self._args = args
     self._kwargs = kwargs

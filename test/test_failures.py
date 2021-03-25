@@ -28,16 +28,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from .OrderCheckObserver import OrderCheckObserver
-from .ComparisonCheckObserver import ComparisonCheckObserver
 import os
 import unittest
 import taskrun
 import time
+from .OrderCheckObserver import OrderCheckObserver
+from .ComparisonCheckObserver import ComparisonCheckObserver
 
 
 class FailuresTestCase(unittest.TestCase):
@@ -647,6 +643,6 @@ class FailuresTestCase(unittest.TestCase):
     tm.run_tasks()
     end_time = time.time()
 
-    # Make sure we actually killed everything and exited quickly, and didn't
-    # leave tasks running that should have been killed.
+    # Make sure we actually killed everything and exited quickly. This means
+    # taskrun didn't leave tasks running that should have been killed.
     self.assertLess(end_time - start_time, 0.5)

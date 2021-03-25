@@ -29,46 +29,84 @@
  * POSSIBILITY OF SUCH DAMAGE.
 """
 
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-
-from .Task import Task
-
-
-class NopTask(Task):
+class Resource:
   """
-  This class is a Task that does nothing (No Operation)
+  This class defines the abstract interface for a resource
   """
 
-  def __init__(self, manager, name):
+  def __init__(self, name, default):
     """
-    This instiates a NopTask object
+    Constructs a Resource object
 
     Args:
-      manager (TaskManager) : passed to Task.__init__()
-      name (str)            : passed to Task.__init__()
+      name (str) : the name of the resource
+      default    : the default value for this resource
     """
+    self._name = name
+    self._default = default
 
-    super(NopTask, self).__init__(manager, name)
-    self._done = False
+  @property
+  def name(self):
+    """
+    Returns:
+      (str) : name of this Resource
+    """
+    return self._name
 
-  def describe(self):
+  @name.setter
+  def name(self, value):
     """
-    See Task.describe()
-    """
-    return 'nop'
+    Sets the name of this Resource
 
-  def execute(self):
+    Args:
+      value (str) : the new name
     """
-    See Task.execute()
-    """
-    self._done = True
+    self._name = value
 
-  def kill(self):
+  @property
+  def default(self):
     """
-    See Task.kill()
-    This implementation ignores this because there is nothing to kill!
+    Returns:
+      the default value
     """
-    if not self._done:
-      self.killed = True
+    return self._default
+
+  @default.setter
+  def default(self, value):
+    """
+    Sets the default value of this Resource
+
+    Args:
+      value (num) : the new default value
+    """
+    self._default = value
+
+  def can_use(self, task):
+    """
+    This method checks if the specified task could use the resource
+
+    Args:
+      task (Task) : the task desiring to use the resource
+    """
+    raise NotImplementedError('subclasses must override this')
+
+  def use(self, task):
+    """
+    This method checks and uses a resource by the specified task
+
+    Args:
+      task (Task) : the task desiring to use the resource
+
+    Returns:
+      (bool) : returns True if successful, False otherwise
+    """
+    raise NotImplementedError('subclasses must override this')
+
+  def release(self, task):
+    """
+    This method releases the resource used by the specified task
+
+    Args:
+      task (Task) : the task releasing the resource
+    """
+    raise NotImplementedError('subclasses must override this')

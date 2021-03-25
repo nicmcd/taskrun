@@ -35,7 +35,7 @@ import taskrun
 class OrderCheckObserver(taskrun.Observer):
 
   def __init__(self, order, verbose=False):
-    super(OrderCheckObserver, self).__init__()
+    super().__init__()
     self._order = order
     self._ok = True
     self._actual = []

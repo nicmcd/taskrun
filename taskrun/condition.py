@@ -28,33 +28,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-from .OrderCheckObserver import OrderCheckObserver
-import unittest
-import taskrun
 
+class Condition:
+  """
+  This abstract class represents a condition on which conditional execution of
+  tasks is based.
+  """
 
-class DependenciesTestCase(unittest.TestCase):
-  def test_dep1(self):
-    ob = OrderCheckObserver(['@t1', '+t1', '-t1'])
-    tm = taskrun.TaskManager(observers=[ob])
-    t1 = taskrun.ProcessTask(tm, 't1', '')
-    tm.run_tasks()
-    self.assertTrue(ob.ok())
-
-  def test_dep2(self):
-    ob = OrderCheckObserver(['@t1', '@t2', '+t1', '-t1', '+t2', '-t2'])
-    tm = taskrun.TaskManager(observers=[ob])
-    t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
-    t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.01')
-    t2.add_dependency(t1)
-    tm.run_tasks()
-    self.assertTrue(ob.ok())
-
-  def test_dep3(self):
-    ob = OrderCheckObserver(['@t1', '@t2', '+t2', '-t2', '+t1', '-t1'])
-    tm = taskrun.TaskManager(observers=[ob])
-    t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
-    t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.01')
-    t1.add_dependency(t2)
-    tm.run_tasks()
-    self.assertTrue(ob.ok())
+  def check(self):
+    """
+    Returns:
+      (bool) : True if the task should execute
+    """
+    raise NotImplementedError('subclasses should override this')

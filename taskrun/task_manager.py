@@ -28,22 +28,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
 import datetime
 import os
 import random
 import signal
-import sys
 import threading
 import time
-from .FailureMode import FailureMode
-from .Task import Task
+from .failure_mode import FailureMode
+from .task import Task
 
 
-class TaskManager(object):
+class TaskManager:
   """
   This class manages a group of tasks
   """
@@ -70,7 +65,7 @@ class TaskManager(object):
     self._resource_manager = resource_manager
     self._observers = []
     if observers:
-      self._observers = [ob for ob in observers]
+      self._observers = list(observers)
     self._condition_variable = threading.Condition()
     self._failure_mode = FailureMode.create(failure_mode)
     self._failed = False
@@ -86,7 +81,7 @@ class TaskManager(object):
     Args:
       task (Task) : the task to add
     """
-
+    assert isinstance(task, Task)
     assert self._running is False
     self._waiting_tasks.append(task)
 
@@ -370,7 +365,7 @@ class TaskManager(object):
     # completed. It is important to kill the process (exit) so that the signal
     # isn't ignored.
     if os.getpid() != self._pid:
-      os._exit(-1)
+      os._exit(-1)  # pylint: disable=protected-access
       return
 
     if signum == signal.SIGINT:
@@ -386,7 +381,7 @@ class TaskManager(object):
         return
 
     # Resets signal handlers to default
-    self._reset_signal_handlers()
+    TaskManager._reset_signal_handlers()
 
     # Create a new thread to perform the termination. A separate thread is
     # needed because this signal handler is running within the main thread
@@ -397,10 +392,10 @@ class TaskManager(object):
   def _set_signal_handlers(self):
     """
     Sets the signal handlers for SIGINT and SIGTERM to gracefully shutdown when
-    received. SIGINT also includes a 3 seconds guard window.
+    received. SIGINT also includes a 3 second guard window.
     """
     ignore_signal = False
-    def handler(signum, frame):
+    def handler(signum, _):
       # Ignores signal if this function is already handling a signal.
       nonlocal ignore_signal
       if ignore_signal:
@@ -413,7 +408,8 @@ class TaskManager(object):
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 
-  def _reset_signal_handlers(self):
+  @staticmethod
+  def _reset_signal_handlers():
     """
     Resets the changed signal handlers to the default handlers.
     """
@@ -503,7 +499,7 @@ class TaskManager(object):
       observer.run_complete()
 
     # resets the signal handlers to the defaults
-    self._reset_signal_handlers()
+    TaskManager._reset_signal_handlers()
 
     # return True iff all tasks reported success, False otherwise
     return not self._failed

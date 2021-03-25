@@ -36,7 +36,7 @@ import time
 class ComparisonCheckObserver(taskrun.Observer):
 
   def __init__(self, events, comparisons, verbose=False):
-    super(ComparisonCheckObserver, self).__init__()
+    super().__init__()
     self._events = events
     self._comparisons = comparisons
     self._actual = {}

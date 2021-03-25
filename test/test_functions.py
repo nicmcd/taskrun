@@ -28,10 +28,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
 import os
 import unittest
 import taskrun
@@ -52,15 +48,6 @@ class FunctionsTestCase(unittest.TestCase):
     global value
     value = None
     tm = taskrun.TaskManager()
-    t1 = taskrun.FunctionTask(tm, 't1', False, myfunc, 10, 20, c=True, d=100)
+    t1 = taskrun.FunctionTask(tm, 't1', myfunc, 10, 20, c=True, d=100)
     tm.run_tasks()
     self.assertEqual(value, 10 + 20 + 100)
-
-  def test_func2(self):
-    # forked function run in a separate process, thus can't alter variables
-    global value
-    value = None
-    tm = taskrun.TaskManager()
-    t1 = taskrun.FunctionTask(tm, 't1', True, myfunc, 10, 20, c=True, d=100)
-    tm.run_tasks()
-    self.assertNotEqual(value, 10 + 20 + 100)

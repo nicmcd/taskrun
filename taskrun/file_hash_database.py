@@ -28,17 +28,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
 import functools
 import hashlib
 import os
 import threading
 
 
-class FileHashDatabase(object):
+class FileHashDatabase:
   """
   This class maintains a database of file change history. It only tracks if
   files have changed since last time it ran.

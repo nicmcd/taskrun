@@ -28,24 +28,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
 import os
 import subprocess
 import re
 import threading
-from .Task import Task
+from .task import Task
 
 class ClusterTask(Task):
   """
   This class is a Task that runs as a cluster process.
   """
 
+  @staticmethod
+  def supported_modes():
+    """
+    Returns a list of supported modes.
+    """
+    return ['sge', 'lsf', 'slurm']
+
   def __init__(self, manager, name, command, mode):
     """
-    This instiates a ClusterTask object with a subprocess command
+    This instantiates a ClusterTask object with a subprocess command
 
     Args:
       manager (TaskManager) : passed to Task.__init__()
@@ -53,10 +56,9 @@ class ClusterTask(Task):
       command (str)         : the command to be run
       mode (str)            : name of cluster scheduler
     """
-
-    super(ClusterTask, self).__init__(manager, name)
+    super().__init__(manager, name)
     self._command = command
-    assert mode in ['sge', 'lsf', 'slurm'], 'invalid scheduler name: ' + mode
+    assert mode in self.supported_modes(), 'invalid scheduler name: ' + mode
     self._mode = mode
     self._stdout_file = None
     self._stderr_file = None
@@ -234,7 +236,9 @@ class ClusterTask(Task):
            for k, v in self._cluster_resources.items()])])
       cmd.append(self._command)
       return ' '.join(cmd)
-    elif self._mode == 'lsf':
+
+    # LSF cluster task
+    if self._mode == 'lsf':
       cmd = ['bsub', '-J', self.name] # name of the task
       if self._stdout_file:
         cmd.extend(['-o', self._stdout_file])
@@ -252,7 +256,9 @@ class ClusterTask(Task):
       cmd.append("--")
       cmd.append(re.sub('"', '\\"', self._command))
       return ' '.join(cmd)
-    elif self._mode == 'slurm':
+
+    # Slurm cluster task
+    if self._mode == 'slurm':
       cmd = ['srun', '-vv', '-J', self.name]
       if self._stdout_file:
         cmd.extend(['-o', self._stdout_file])
@@ -266,8 +272,9 @@ class ClusterTask(Task):
         cmd.extend(self._cluster_options)
       cmd.append(self._command)
       return ' '.join(cmd)
-    else:
-      assert False
+
+    assert False, 'programmer error :('
+    return None
 
   def execute(self):
     """
@@ -307,8 +314,7 @@ class ClusterTask(Task):
     self.returncode = self._proc.returncode
     if self.returncode == 0:
       return None
-    else:
-      return self.returncode
+    return self.returncode
 
   def kill(self):
     """
@@ -324,5 +330,5 @@ class ClusterTask(Task):
         if self._proc is not None:
           try:
             self._proc.terminate()
-          except ProcessLookupError as ex:
+          except ProcessLookupError:
             pass

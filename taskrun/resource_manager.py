@@ -28,40 +28,62 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-import os
-
-from .FileHashCondition import FileHashCondition
-from .FileModificationCondition import FileModificationCondition
-from .Observer import Observer
+from .resource import Resource
 
 
-class FileCleanupObserver(Observer):
+class ResourceManager:
   """
-  This class is an observer for deleting files upons task failure
+  This class manages a group of resources
   """
 
-  def __init__(self):
+  def __init__(self, *args):
     """
-    Constructs an Observer
-    """
-    super(FileCleanupObserver, self).__init__()
+    Constructs a ResourceManager object
 
-  def task_failed(self, task, errors):
-    """
-    See Observer.task_failed()
+    Args:
+      *args = variable number of Resource objects
     """
 
-    for condition in task.conditions:
-      if (isinstance(condition, FileHashCondition) or
-          isinstance(condition, FileModificationCondition)):
-        for output in condition.outputs:
-          if os.path.isfile(output):
-            try:
-              os.remove(output)
-            except OSError:
-              print('ERROR: Couldn\'t remove {0}. Remove it manually!!!'
-                    .format(output))
+    assert all(isinstance(arg, Resource) for arg in args), \
+      'All arguments to ResourceManager must be taskrun.Resources'
+    self._resources = args
+
+  def can_start(self, task):
+    """
+    Determines if a task can start
+
+    Args:
+      task (Task) : the task under question
+    """
+    for resource in self._resources:
+      if not resource.can_use(task):
+        return False
+    return True
+
+  def start(self, task):
+    """
+    This method calls can_start() to see if the task can start. If successful,
+    it then uses the resoures.
+
+    Args:
+      task (Task) : the task under question
+
+    Returns:
+      (bool) : True on success, False otherwise
+    """
+    if self.can_start(task):
+      for resource in self._resources:
+        res = resource.use(task)
+        assert res
+      return True
+    return False
+
+  def done(self, task):
+    """
+    Gives back the resources used by a task
+
+    Args:
+      task (Task) : the task under question
+    """
+    for resource in self._resources:
+      resource.release(task)

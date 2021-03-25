@@ -28,13 +28,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
 import resource
-from .ProcessTask import ProcessTask
-from .Resource import Resource
+from .process_task import ProcessTask
+from .resource import Resource
 
 
 class CpuTimeResource(Resource):
@@ -51,7 +47,7 @@ class CpuTimeResource(Resource):
       name (str)    : the name of the resource
       default (num) : default value of tasks that don't specify it (in secs)
     """
-    super(CpuTimeResource, self).__init__(name, default)
+    super().__init__(name, default)
     assert isinstance(default, int), '"default" must be an int'
 
   def can_use(self, task):
@@ -77,9 +73,9 @@ class CpuTimeResource(Resource):
 
     # enforce CPU time limit on the ProcessTask
     if isinstance(task, ProcessTask):
-      # TODO(nicmcd): use the following when Python subprocess is fixed
-      # task.add_prefunc(lambda: (limit_cputime(secs)))
       assert int(secs) > 0
+      # TODO(nicmcd): use the following when Python subprocess is fixed
+      #task.add_prefunc(lambda: (limit_cputime(secs)))
       task.command = 'ulimit -t {} && {}'.format(int(secs), task.command)
 
     return True
@@ -88,14 +84,13 @@ class CpuTimeResource(Resource):
     """
     See Resource.release()
     """
-    pass
 
 
 def limit_cputime(secs):
   """
   This uses resource.RLIMIT_CPU to limit the amount of CPU time THIS process
   is able to use. This is intented to be used as a preexec_fn in the
-  subprocess.Popen constructor of taskrun.ProcessTask
+  subprocess.Popen constructor of taskrun.process_task
 
   Args:
     membytes (int) : the number of bytes to be the threshold

@@ -28,27 +28,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
+from .task import Task
 
 
-class Condition(object):
+class NopTask(Task):
   """
-  This abstract class represents a condition on which conditional execution of
-  tasks is based.
+  This class is a Task that does nothing (No Operation)
   """
 
-  def __init__(self):
+  def __init__(self, manager, name):
     """
-    Constructs a Condition object
-    """
-    pass
+    This instiates a NopTask object
 
-  def check(self):
+    Args:
+      manager (TaskManager) : passed to Task.__init__()
+      name (str)            : passed to Task.__init__()
     """
-    Returns:
-      (bool) : True if the task should execute
+
+    super().__init__(manager, name)
+    self._done = False
+
+  def describe(self):
     """
-    raise NotImplementedError('subclasses should override this')
+    See Task.describe()
+    """
+    return 'nop'
+
+  def execute(self):
+    """
+    See Task.execute()
+    """
+    self._done = True
+
+  def kill(self):
+    """
+    See Task.kill()
+    This implementation ignores this because there is nothing to kill!
+    """
+    if not self._done:
+      self.killed = True

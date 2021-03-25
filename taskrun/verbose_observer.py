@@ -28,14 +28,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
 import sys
 import time
 
-from .Observer import Observer
+from .observer import Observer
 
 
 # conditionally import the termcolor package, it's OK if it doesn't exist
@@ -62,8 +58,7 @@ class VerboseObserver(Observer):
     Note: if a task fails or is killed and it is set to be shown, the
           description is always added
     """
-
-    super(VerboseObserver, self).__init__()
+    super().__init__()
     self._total_tasks = 0
     self._finished_tasks = 0
     self._successful_tasks = 0
@@ -330,12 +325,11 @@ def _time_string(total_seconds):
   if days > 0:
     return '{0}d:{1}h:{2}m:{3}s'.format(
       int(days), int(hours), int(minutes), int(seconds))
-  elif hours > 0:
+  if hours > 0:
     return '{0}h:{1}m:{2}s'.format(
       int(hours), int(minutes), int(seconds))
-  elif minutes > 0:
+  if minutes > 0:
     return '{0}m:{1}s'.format(
       int(minutes), int(seconds))
-  else:
-    return '{0}s'.format(
-      int(seconds))
+  return '{0}s'.format(
+    int(seconds))

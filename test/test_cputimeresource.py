@@ -28,15 +28,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from .ComparisonCheckObserver import ComparisonCheckObserver
-from .OrderCheckObserver import OrderCheckObserver
 import os
 import unittest
 import taskrun
+from .ComparisonCheckObserver import ComparisonCheckObserver
+from .OrderCheckObserver import OrderCheckObserver
 
 
 def myfunc(name, number):
@@ -100,7 +96,7 @@ class CpuTimeResourcesTestCase(unittest.TestCase):
       taskrun.CpuTimeResource('time', 20))
     ob = OrderCheckObserver(['@t1', '+t1', '-t1'], verbose=False)
     tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
-    t1 = taskrun.FunctionTask(tm, 't1', False, myfunc, 'jimbo', 5)
+    t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
     tm.run_tasks()
     self.assertTrue(ob.ok())
 
@@ -121,7 +117,7 @@ class CpuTimeResourcesTestCase(unittest.TestCase):
     rm = taskrun.ResourceManager(
       taskrun.CpuTimeResource('time', 20))
     tm = taskrun.TaskManager(rm)
-    t1 = taskrun.FunctionTask(tm, 't1', False, myfunc, 'jimbo', 5)
+    t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
     t1.resources = {'time': 20}
     error = False
     try:

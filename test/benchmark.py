@@ -78,7 +78,7 @@ print('\n*** FunctionTask ***')
 start = time.time()
 tm = get_tm()
 for idx in range(num):
-  taskrun.FunctionTask(tm, 'Task_{0:04d}'.format(idx), False,
+  taskrun.FunctionTask(tm, 'Task_{0:04d}'.format(idx),
                        func, 'you', 'me', 'yall', mom=True, dad=False)
 stop = time.time()
 elapsed = stop - start

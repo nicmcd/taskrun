@@ -28,13 +28,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from .OrderCheckObserver import OrderCheckObserver
 import unittest
 import taskrun
+from .OrderCheckObserver import OrderCheckObserver
+
 
 thres = 0
 total = 0
@@ -57,13 +54,13 @@ class FunctionConditionsTestCase(unittest.TestCase):
                              '-t2', '+t3', '-t3', '+t4', '-t4'])
     tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
 
-    t1 = taskrun.FunctionTask(tm, 't1', False, myfunc, 'jimbo', 5)
+    t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
     t1.add_condition(taskrun.FunctionCondition(cond))
-    t2 = taskrun.FunctionTask(tm, 't2', False, myfunc, 'gertrude', 6)
+    t2 = taskrun.FunctionTask(tm, 't2', myfunc, 'gertrude', 6)
     t2.add_condition(taskrun.FunctionCondition(cond))
-    t3 = taskrun.FunctionTask(tm, 't3', False, myfunc, 'sally', 2)
+    t3 = taskrun.FunctionTask(tm, 't3', myfunc, 'sally', 2)
     t3.add_condition(taskrun.FunctionCondition(cond))
-    t4 = taskrun.FunctionTask(tm, 't4', False, myfunc, 'william', 3)
+    t4 = taskrun.FunctionTask(tm, 't4', myfunc, 'william', 3)
     t4.add_condition(taskrun.FunctionCondition(cond))
 
     tm.run_tasks()
@@ -80,13 +77,13 @@ class FunctionConditionsTestCase(unittest.TestCase):
                              '-t2', '*t3', '*t4'])
     tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
 
-    t1 = taskrun.FunctionTask(tm, 't1', False, myfunc, 'jimbo', 5)
+    t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
     t1.add_condition(taskrun.FunctionCondition(cond))
-    t2 = taskrun.FunctionTask(tm, 't2', False, myfunc, 'gertrude', 6)
+    t2 = taskrun.FunctionTask(tm, 't2', myfunc, 'gertrude', 6)
     t2.add_condition(taskrun.FunctionCondition(cond))
-    t3 = taskrun.FunctionTask(tm, 't3', False, myfunc, 'sally', 2)
+    t3 = taskrun.FunctionTask(tm, 't3', myfunc, 'sally', 2)
     t3.add_condition(taskrun.FunctionCondition(cond))
-    t4 = taskrun.FunctionTask(tm, 't4', False, myfunc, 'william', 3)
+    t4 = taskrun.FunctionTask(tm, 't4', myfunc, 'william', 3)
     t4.add_condition(taskrun.FunctionCondition(cond))
 
     tm.run_tasks()
@@ -103,13 +100,13 @@ class FunctionConditionsTestCase(unittest.TestCase):
                              '*t4'])
     tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
 
-    t1 = taskrun.FunctionTask(tm, 't1', False, myfunc, 'jimbo', 5)
+    t1 = taskrun.FunctionTask(tm, 't1', myfunc, 'jimbo', 5)
     t1.add_condition(taskrun.FunctionCondition(cond))
-    t2 = taskrun.FunctionTask(tm, 't2', False, myfunc, 'gertrude', 6)
+    t2 = taskrun.FunctionTask(tm, 't2', myfunc, 'gertrude', 6)
     t2.add_condition(taskrun.FunctionCondition(cond))
-    t3 = taskrun.FunctionTask(tm, 't3', False, myfunc, 'sally', 2)
+    t3 = taskrun.FunctionTask(tm, 't3', myfunc, 'sally', 2)
     t3.add_condition(taskrun.FunctionCondition(cond))
-    t4 = taskrun.FunctionTask(tm, 't4', False, myfunc, 'william', 3)
+    t4 = taskrun.FunctionTask(tm, 't4', myfunc, 'william', 3)
     t4.add_condition(taskrun.FunctionCondition(cond))
 
     tm.run_tasks()

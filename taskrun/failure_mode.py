@@ -28,15 +28,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from enum import Enum, unique
+import enum
 
 
-@unique
-class FailureMode(Enum):
+@enum.unique
+class FailureMode(enum.Enum):
   """
   This enum class defines a set of failure modes for a TaskManager object
   """
@@ -70,21 +66,19 @@ class FailureMode(Enum):
     if isinstance(val, FailureMode):
       return val
 
-    elif isinstance(val, int):
+    if isinstance(val, int):
       return FailureMode(val)
 
-    elif isinstance(val, str):
+    if isinstance(val, str):
       if val.lower() == 'aggressive_fail':
         return FailureMode.AGGRESSIVE_FAIL
-      elif val.lower() == 'passive_fail':
+      if val.lower() == 'passive_fail':
         return FailureMode.PASSIVE_FAIL
-      elif val.lower() == 'active_continue':
+      if val.lower() == 'active_continue':
         return FailureMode.ACTIVE_CONTINUE
-      elif val.lower() == 'blind_continue':
+      if val.lower() == 'blind_continue':
         return FailureMode.BLIND_CONTINUE
-      else:
-        raise ValueError('invalid FailureMode str {0}'.format(val))
+      raise ValueError('invalid FailureMode str {0}'.format(val))
 
-    else:
-      raise TypeError('invalid input type to FailureMode.create(): {0}'
-                      .format(type(val)))
+    raise TypeError('invalid input type to FailureMode.create(): {0}'
+                    .format(type(val)))

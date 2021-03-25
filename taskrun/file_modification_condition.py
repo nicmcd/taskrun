@@ -28,12 +28,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
 import os
-from .Condition import Condition
+
+from .condition import Condition
 
 
 class FileModificationCondition(Condition):
@@ -55,7 +52,7 @@ class FileModificationCondition(Condition):
       outputs (list<str>)          : a list of filenames for the output files
       verbose (bool)               : print the results during check()
     """
-    super(FileModificationCondition, self).__init__()
+    super().__init__()
     if inputs is None:
       inputs = []
     if outputs is None:
@@ -98,11 +95,10 @@ class FileModificationCondition(Condition):
         if self.verbose:
           print('{} does not exist'.format(ofile))
         return True
-      else:
-        new_mtime = os.path.getmtime(ofile)
-        if new_mtime < mtime:
-          mtime = new_mtime
-          mfile = ofile
+      new_mtime = os.path.getmtime(ofile)
+      if new_mtime < mtime:
+        mtime = new_mtime
+        mfile = ofile
 
     # check whether any input file is newer than the minimum output file
     #  modification time

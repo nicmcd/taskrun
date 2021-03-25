@@ -28,51 +28,49 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
+import resource
+import psutil
+from .process_task import ProcessTask
+from .counter_resource import CounterResource
 
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-import os
-from .Condition import Condition
-
-
-class FileHashCondition(Condition):
+class MemoryResource(CounterResource):
   """
-  This class uses lists of files to determine if a task should run. This
-  condition takes a set of input files that are file based dependencies. This
-  condition will have the task run if any of the files have changed since the
-  last time. This condition takes a set of output files which the task would
-  create or modify if it ran. This condition will have the task run if any of
-  these files do not exist.
+  This class implements a memory resource. This implementation enforces the
+  memory usage by using the Python3 resource.RLIMIT_AS
   """
 
-  def __init__(self, filedb, inputs, outputs):
+  def _task_used(self, task, uses):
     """
-    This constructs a FileHashCondition object
+    see CounterResource._task_used()
+    """
+    # if this is a ProcessTask, enforce memory limit
+    if isinstance(task, ProcessTask):
+      assert uses > 0.0, 'ProcessTasks must use some memory!'
+      # TODO(nicmcd): use the following when Python subprocess is fixed
+      #membytes = int(uses * 1024 * 1024 * 1024)
+      #task.add_prefunc(lambda: (limit_mem(membytes)))
+      memkbytes = int(uses * 1024 * 1024)
+      task.command = 'ulimit -v {} && {}'.format(memkbytes, task.command)
 
-    Args:
-      filedb (FileChangedDatabase) : a file database for checking file status
-      inputs (list<str>)           : a list of filenames for the input files
-      outputs (list<str>)          : a list of filenames for the output files
+  def current_available_memory_gib():
     """
-    super(FileHashCondition, self).__init__()
-    self.filedb = filedb
-    self.inputs = inputs
-    self.outputs = outputs
+    Returns the currently available memory in the system defined as amount of
+    unused memory plus currently cached memory.
 
-  def check(self):
+    Returns:
+      (float) : amount of available memory in GiB
     """
-    See Condition.check()
-    This implementation will return True if any of the output files do not exist
-    or if the input files have changed
-    """
+    return psutil.virtual_memory().available / (1024 * 1024 * 1024)
 
-    # don't make fast fail decisions, changed() needs to be called on all inputs
-    ret = False
-    for ofile in self.outputs:
-      if not os.path.isfile(ofile):
-        ret = True
-    for ifile in self.inputs:
-      if self.filedb.changed(ifile):
-        ret = True
-    return ret
+def limit_mem(membytes):
+  """
+  This uses resource.RLIMIT_AS to limit the amount of address space THIS process
+  is able to use. This is intented to be used as a preexec_fn in the
+  subprocess.Popen constructor of taskrun.process_task
+
+  Args:
+    membytes (int) : the number of bytes to be the threshold
+  """
+  limits = resource.getrlimit(resource.RLIMIT_AS)
+  limits = (membytes, limits[1])
+  resource.setrlimit(resource.RLIMIT_AS, limits)

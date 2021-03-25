@@ -28,11 +28,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from .Resource import Resource
+from .resource import Resource
 
 class CounterResource(Resource):
   """
@@ -48,17 +44,23 @@ class CounterResource(Resource):
       default (num) : default value of tasks that don't specify it
       total (num)   : total available to be used by tasks
     """
-    super(CounterResource, self).__init__(name, default)
+    super().__init__(name, default)
     self._total = total
     self._amount = total
     self._tolerance = float(self._total) / 1e6
 
   @property
   def total(self):
+    """
+    Returns the total count
+    """
     return self._total
 
   @property
   def used(self):
+    """
+    Returns the used count
+    """
     return self._total - self._amount
 
   def can_use(self, task):
@@ -99,8 +101,7 @@ class CounterResource(Resource):
       # perform _task_used specialization
       self._task_used(task, uses)
       return True
-    else:
-      return False
+    return False
 
   def release(self, task):
     """
@@ -125,11 +126,9 @@ class CounterResource(Resource):
     This is a function that subclasses can override for specialization.
     This gets called just after the task used the resource.
     """
-    pass
 
   def _task_released(self, task, uses):
     """
     This is a function that subclasses can override for specialization.
     This gets called just after the task released the resource.
     """
-    pass

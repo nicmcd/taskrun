@@ -28,10 +28,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
 import threading
 
 
@@ -111,8 +107,7 @@ class Task(threading.Thread):
 
     if resource in self._resources:
       return self._resources[resource]
-    else:
-      return None
+    return None
 
   def get_dependencies(self):
     """
@@ -136,11 +131,10 @@ class Task(threading.Thread):
       curr = visit.pop()
       if curr is self:
         raise ValueError('cyclic dependency found')
-      else:
-        visited.add(curr)
-        for dep in curr._dependencies:  #pylint: disable=protected-access
-          if dep not in visited:
-            visit.append(dep)
+      visited.add(curr)
+      for dep in curr._dependencies:  #pylint: disable=protected-access
+        if dep not in visited:
+          visit.append(dep)
 
     # add the task as a dependency
     assert task not in self._dependencies
@@ -208,7 +202,6 @@ class Task(threading.Thread):
       if len(self.conditions) == 0:
         # always run if no conditions
         self._bypass = False
-        return self._bypass
       else:
         # default to bypassing unless at least one condition says to run
         self._bypass = True
@@ -216,9 +209,7 @@ class Task(threading.Thread):
           if condition.check():
             self._bypass = False
           break
-        return self._bypass
-    else:
-      return self._bypass
+    return self._bypass
 
   def run(self):
     """
@@ -231,7 +222,7 @@ class Task(threading.Thread):
       # try to execute
       try:
         self._errors = self.execute()
-      except Exception as ex:
+      except Exception as ex:  # pylint: disable=broad-except
         self._errors = ex
 
       # report to the task manager

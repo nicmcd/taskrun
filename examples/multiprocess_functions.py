@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,63 +31,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
 """
 
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
+import termplotlib
+import numpy
+import os
+import taskrun
+import sys
 
+def square(outputs, index, value):
+  outputs[index] = value * value
 
-class ResourceManager(object):
-  """
-  This class manages a group of resources
-  """
+def main():
+  kSize = 100
+  outputs = numpy.zeros(kSize, dtype=numpy.float64)
 
-  def __init__(self, *args):
-    """
-    Constructs a ResourceManager object
+  rm = taskrun.ResourceManager(
+    taskrun.CounterResource('cpus', 1, os.cpu_count()))
+  ob = taskrun.VerboseObserver()
+  tm = taskrun.TaskManager(resource_manager=rm, observers=[ob])
 
-    Args:
-      *args = variable number of Resource objects
-    """
+  values = numpy.linspace(1, 10, kSize)
+  for tid, value in enumerate(values):
+    taskrun.FunctionTask(tm, 'task_{}'.format(tid), square, outputs, tid, value)
 
-    self._resources = args
+  tm.run_tasks()
 
-  def can_start(self, task):
-    """
-    Determines if a task can start
+  fig = termplotlib.figure()
+  fig.plot(values, outputs, width=80, height=40, title='x^2')
+  fig.show()
 
-    Args:
-      task (Task) : the task under question
-    """
-    for resource in self._resources:
-      if not resource.can_use(task):
-        return False
-    return True
-
-  def start(self, task):
-    """
-    This method calls can_start() to see if the task can start. If successful,
-    it then uses the resoures.
-
-    Args:
-      task (Task) : the task under question
-
-    Returns:
-      (bool) : True on success, False otherwise
-    """
-    if self.can_start(task):
-      for resource in self._resources:
-        res = resource.use(task)
-        assert res
-      return True
-    else:
-      return False
-
-  def done(self, task):
-    """
-    Gives back the resources used by a task
-
-    Args:
-      task (Task) : the task under question
-    """
-    for resource in self._resources:
-      resource.release(task)
+if __name__ == '__main__':
+  sys.exit(main())

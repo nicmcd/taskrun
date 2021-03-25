@@ -29,28 +29,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
 """
 
-import multiprocessing
-multiprocessing.set_start_method('forkserver')
+from .cluster_task import ClusterTask
+from .condition import Condition
+from .counter_resource import CounterResource
+from .cpu_time_resource import CpuTimeResource
+from .failure_mode import FailureMode
+from .file_cleanup_observer import FileCleanupObserver
+from .file_hash_condition import FileHashCondition
+from .file_hash_database import FileHashDatabase
+from .file_modification_condition import FileModificationCondition
+from .function_condition import FunctionCondition
+from .function_task import FunctionTask
+from .memory_resource import MemoryResource
+from .nop_task import NopTask
+from .observer import Observer
+from .process_task import ProcessTask
+from .resource import Resource
+from .resource_manager import ResourceManager
+from .task import Task
+from .task_manager import TaskManager
+from .verbose_observer import VerboseObserver
 
-from .ClusterTask import ClusterTask
-from .Condition import Condition
-from .CounterResource import CounterResource
-from .CpuTimeResource import CpuTimeResource
-from .FailureMode import FailureMode
-from .FileCleanupObserver import FileCleanupObserver
-from .FileHashCondition import FileHashCondition
-from .FileHashDatabase import FileHashDatabase
-from .FileModificationCondition import FileModificationCondition
-from .FunctionCondition import FunctionCondition
-from .FunctionTask import FunctionTask
-from .MemoryResource import MemoryResource
-from .NopTask import NopTask
-from .Observer import Observer
-from .ProcessTask import ProcessTask
-from .Resource import Resource
-from .ResourceManager import ResourceManager
-from .Task import Task
-from .TaskManager import TaskManager
-from .VerboseObserver import VerboseObserver
-
-__version__ = '3.0.0'
+__version__ = '4.0.0'

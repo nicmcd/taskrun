@@ -28,18 +28,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
 import os
 import signal
 import subprocess
 import threading
-import time
-
-from .Task import Task
-
+from .task import Task
 
 
 class ProcessTask(Task):
@@ -56,8 +49,7 @@ class ProcessTask(Task):
       name (str)            : passed to Task.__init__()
       command (str)         : the command to be run
     """
-
-    super(ProcessTask, self).__init__(manager, name)
+    super().__init__(manager, name)
     self._command = command
     self._stdout_file = None
     self._stderr_file = None
@@ -129,6 +121,7 @@ class ProcessTask(Task):
     Args:
       func (callable) : a callable to be executed
     """
+    # TODO(nicmcd): when will preexec_fn be supported?
     raise NotImplementedError('ProcessTask does not yet support pre-execution '
                               'functions due to Python subprocess limitations.')
     #self._prefuncs.append(func)
@@ -153,6 +146,7 @@ class ProcessTask(Task):
     with self._lock:
       # If we're killed at this point, don't bother starting a new process.
       if self.killed:
+        print('already killed {}'.format(self.name))
         return None
 
       # format stdout and stderr outputs
@@ -190,12 +184,14 @@ class ProcessTask(Task):
       #pylint: disable=maybe-no-member
       stderr_fd.close()
 
-    # check the return code
+    # get the return code
+    #with self._lock:
     self.returncode = self._proc.returncode
+
+    # check the return code
     if self.returncode == 0:
       return None
-    else:
-      return self.returncode
+    return self.returncode
 
   def kill(self):
     """
@@ -210,6 +206,9 @@ class ProcessTask(Task):
         # there is a chance the proc hasn't been created yet
         if self._proc is not None:
           try:
-            self._proc.terminate()
-          except ProcessLookupError as ex:
+            # self._proc.terminate() doesn't work likely because the process is
+            # a shell process and the SIGTERM isn't being properly propagated.
+            # Killing the whole process group seems to work.
+            os.killpg(os.getpgid(self._proc.pid), signal.SIGTERM)
+          except ProcessLookupError:
             pass

@@ -28,88 +28,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
+import os
 
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
+from .file_hash_condition import FileHashCondition
+from .file_modification_condition import FileModificationCondition
+from .observer import Observer
 
 
-class Observer(object):
+class FileCleanupObserver(Observer):
   """
-  This defines the an Observer, one who watches what the Manager is executing.
-  This class is meant to be overridden by subclasses that want a custom way to
-  monitor observance of tasks starting and completing.
+  This class is an observer for deleting files upons task failure
   """
-
-  def __init__(self):
-    """
-    Constructs an Observer object
-    """
-    pass
-
-  def task_added(self, task):
-    """
-    Notification of a task added to the TaskManager
-
-    Args:
-      task (Task): the task that is now starting
-    """
-    pass
-
-  def task_started(self, task):
-    """
-    Notification of a task starting
-
-    Args:
-      task (Task): the task that is now starting
-    """
-    pass
-
-  def task_bypassed(self, task):
-    """
-    Notification of a task bypass
-
-    Args:
-      task (Task): the task that is bypassed
-    """
-    pass
-
-  def task_completed(self, task):
-    """
-    Notification of a task completion
-
-    Args:
-      task (Task): the task that completed
-    """
-    pass
 
   def task_failed(self, task, errors):
     """
-    Notification of task failure
+    See Observer.task_failed()
+    """
 
-    Args:
-      task (Task): the task that failed
-      errors     : an errors to be reported
-    """
-    pass
-
-  def task_killed(self, task):
-    """
-    Notification of a task being killed
-
-    Args:
-      task (Task): the task that failed
-    """
-    pass
-
-  def run_starting(self):
-    """
-    Notification of run starting
-    """
-    pass
-
-  def run_complete(self):
-    """
-    Notification of run completion
-    """
-    pass
+    for condition in task.conditions:
+      if isinstance(condition, (FileHashCondition, FileModificationCondition)):
+        for output in condition.outputs:
+          if os.path.isfile(output):
+            try:
+              os.remove(output)
+            except OSError:
+              print('ERROR: Couldn\'t remove {0}. Remove it manually!!!'
+                    .format(output))

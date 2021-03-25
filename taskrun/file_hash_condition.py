@@ -28,33 +28,47 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-from .OrderCheckObserver import OrderCheckObserver
-import unittest
-import taskrun
+import os
+from .condition import Condition
 
 
-class DependenciesTestCase(unittest.TestCase):
-  def test_dep1(self):
-    ob = OrderCheckObserver(['@t1', '+t1', '-t1'])
-    tm = taskrun.TaskManager(observers=[ob])
-    t1 = taskrun.ProcessTask(tm, 't1', '')
-    tm.run_tasks()
-    self.assertTrue(ob.ok())
+class FileHashCondition(Condition):
+  """
+  This class uses lists of files to determine if a task should run. This
+  condition takes a set of input files that are file based dependencies. This
+  condition will have the task run if any of the files have changed since the
+  last time. This condition takes a set of output files which the task would
+  create or modify if it ran. This condition will have the task run if any of
+  these files do not exist.
+  """
 
-  def test_dep2(self):
-    ob = OrderCheckObserver(['@t1', '@t2', '+t1', '-t1', '+t2', '-t2'])
-    tm = taskrun.TaskManager(observers=[ob])
-    t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
-    t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.01')
-    t2.add_dependency(t1)
-    tm.run_tasks()
-    self.assertTrue(ob.ok())
+  def __init__(self, filedb, inputs, outputs):
+    """
+    This constructs a FileHashCondition object
 
-  def test_dep3(self):
-    ob = OrderCheckObserver(['@t1', '@t2', '+t2', '-t2', '+t1', '-t1'])
-    tm = taskrun.TaskManager(observers=[ob])
-    t1 = taskrun.ProcessTask(tm, 't1', 'sleep 0.01')
-    t2 = taskrun.ProcessTask(tm, 't2', 'sleep 0.01')
-    t1.add_dependency(t2)
-    tm.run_tasks()
-    self.assertTrue(ob.ok())
+    Args:
+      filedb (FileChangedDatabase) : a file database for checking file status
+      inputs (list<str>)           : a list of filenames for the input files
+      outputs (list<str>)          : a list of filenames for the output files
+    """
+    super().__init__()
+    self.filedb = filedb
+    self.inputs = inputs
+    self.outputs = outputs
+
+  def check(self):
+    """
+    See Condition.check()
+    This implementation will return True if any of the output files do not exist
+    or if the input files have changed
+    """
+
+    # don't make fast fail decisions, changed() needs to be called on all inputs
+    ret = False
+    for ofile in self.outputs:
+      if not os.path.isfile(ofile):
+        ret = True
+    for ifile in self.inputs:
+      if self.filedb.changed(ifile):
+        ret = True
+    return ret

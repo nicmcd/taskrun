@@ -28,14 +28,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
-
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-from .OrderCheckObserver import OrderCheckObserver
 import unittest
 import taskrun
-
+from .OrderCheckObserver import OrderCheckObserver
 
 class RandomizeTestCase(unittest.TestCase):
   def __randN(self, b, n):

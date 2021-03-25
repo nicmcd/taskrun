@@ -29,89 +29,68 @@
  * POSSIBILITY OF SUCH DAMAGE.
 """
 
-# Python 3 compatibility
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-
-
-class Resource(object):
+class Observer:
   """
-  This class defines the abstract interface for a resource
+  This defines the an Observer, one who watches what the Manager is executing.
+  This class is meant to be overridden by subclasses that want a custom way to
+  monitor observance of tasks starting and completing.
   """
 
-  def __init__(self, name, default):
+  def task_added(self, task):
     """
-    Constructs a Resource object
+    Notification of a task added to the TaskManager
 
     Args:
-      name (str) : the name of the resource
-      default    : the default value for this resource
+      task (Task): the task that is now starting
     """
-    self._name = name
-    self._default = default
 
-  @property
-  def name(self):
+  def task_started(self, task):
     """
-    Returns:
-      (str) : name of this Resource
-    """
-    return self._name
-
-  @name.setter
-  def name(self, value):
-    """
-    Sets the name of this Resource
+    Notification of a task starting
 
     Args:
-      value (str) : the new name
+      task (Task): the task that is now starting
     """
-    self._name = value
 
-  @property
-  def default(self):
+  def task_bypassed(self, task):
     """
-    Returns:
-      the default value
-    """
-    return self._default
-
-  @default.setter
-  def default(self, value):
-    """
-    Sets the default value of this Resource
+    Notification of a task bypass
 
     Args:
-      value (num) : the new default value
+      task (Task): the task that is bypassed
     """
-    self._default = value
 
-  def can_use(self, task):
+  def task_completed(self, task):
     """
-    This method checks if the specified task could use the resource
-
-    Args:
-      task (Task) : the task desiring to use the resource
-    """
-    raise NotImplementedError('subclasses must override this')
-
-  def use(self, task):
-    """
-    This method checks and uses a resource by the specified task
+    Notification of a task completion
 
     Args:
-      task (Task) : the task desiring to use the resource
-
-    Returns:
-      (bool) : returns True if successful, False otherwise
+      task (Task): the task that completed
     """
-    raise NotImplementedError('subclasses must override this')
 
-  def release(self, task):
+  def task_failed(self, task, errors):
     """
-    This method releases the resource used by the specified task
+    Notification of task failure
 
     Args:
-      task (Task) : the task releasing the resource
+      task (Task): the task that failed
+      errors     : an errors to be reported
     """
-    raise NotImplementedError('subclasses must override this')
+
+  def task_killed(self, task):
+    """
+    Notification of a task being killed
+
+    Args:
+      task (Task): the task that failed
+    """
+
+  def run_starting(self):
+    """
+    Notification of run starting
+    """
+
+  def run_complete(self):
+    """
+    Notification of run completion
+    """
