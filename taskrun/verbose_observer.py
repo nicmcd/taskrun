@@ -28,6 +28,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
 """
+import datetime
 import sys
 import time
 
@@ -48,10 +49,28 @@ class VerboseObserver(Observer):
   This class is an observer for printing what is happening
   """
 
-  def __init__(self, timer=True, log=None, show_starts=True,
-               show_completes=True, show_bypasses=True, show_failures=True,
-               show_kills=False, show_progress=True, show_summary=True,
-               show_description=False):
+  TIMER_DEFAULT = True
+  LOG_DEFAULT = None
+  SHOW_STARTS_DEFAULT = True
+  SHOW_COMPLETES_DEFAULT = True
+  SHOW_BYPASSES_DEFAULT = True
+  SHOW_FAILURES_DEFAULT = True
+  SHOW_KILLS_DEFAULT = False
+  SHOW_PROGRESS_DEFAULT = True
+  SHOW_SUMMARY_DEFAULT = True
+  SHOW_DESCRIPTIONS_DEFAULT = False
+  SHOW_CURRENT_TIME_DEFAULT = False
+
+  def __init__(self, timer=TIMER_DEFAULT, log=LOG_DEFAULT,
+               show_starts=SHOW_STARTS_DEFAULT,
+               show_completes=SHOW_COMPLETES_DEFAULT,
+               show_bypasses=SHOW_BYPASSES_DEFAULT,
+               show_failures=SHOW_FAILURES_DEFAULT,
+               show_kills=SHOW_KILLS_DEFAULT,
+               show_progress=SHOW_PROGRESS_DEFAULT,
+               show_summary=SHOW_SUMMARY_DEFAULT,
+               show_descriptions=SHOW_DESCRIPTIONS_DEFAULT,
+               show_current_time=SHOW_CURRENT_TIME_DEFAULT):
     """
     Constructs an Observer
 
@@ -77,7 +96,8 @@ class VerboseObserver(Observer):
     self._show_kills = show_kills
     self._show_progress = show_progress
     self._show_summary = show_summary
-    self._show_description = show_description
+    self._show_descriptions = show_descriptions
+    self._show_current_time = show_current_time
 
   def task_added(self, task):
     """
@@ -95,15 +115,14 @@ class VerboseObserver(Observer):
       self._times[task] = time.time()
 
     if self._show_starts:
-      # format the output string
-      text = '[Started: {0}]'.format(task.name)
-      # optionally add the description
-      if self._show_description:
-        text += ' {0}'.format(task.describe())
-      # log
+      text = ''
+      if self._show_current_time:
+        text += f'{_now_string()} '
+      text += f'[Started: {task.name}]'
+      if self._show_descriptions:
+        text += f' {task.describe()}'
       if self._log:
         print(text, file=self._log)
-      # print
       print(text)
 
   def task_bypassed(self, task):
@@ -114,15 +133,14 @@ class VerboseObserver(Observer):
     self._finished_tasks += 1
     self._bypassed_tasks += 1
     if self._show_bypasses:
-      # format the output string
-      text = '[Bypassed: {0}]'.format(task.name)
-      # optionally add the description
-      if self._show_description:
-        text += ' {0}'.format(task.describe())
-      # log
+      text = ''
+      if self._show_current_time:
+        text += f'{_now_string()} '
+      text += f'[Bypassed: {task.name}]'
+      if self._show_descriptions:
+        text += f' {task.describe()}'
       if self._log:
         print(text, file=self._log)
-      # print
       if USE_TERM_COLOR:
         text = colored(text, 'yellow')
       print(text)
@@ -139,19 +157,17 @@ class VerboseObserver(Observer):
     self._finished_tasks += 1
     self._successful_tasks += 1
     if self._show_completes:
-      # format the output string
-      text = '[Completed: {0}'.format(task.name)
-      # optionally add the time
+      text = ''
+      if self._show_current_time:
+        text += f'{_now_string()} '
+      text += f'[Completed: {task.name}'
       if self._timer:
-        text += ' {0}'.format(_time_string(task_time))
+        text += f' {_time_string(task_time)}'
       text += ']'
-      # optionally add the description
-      if self._show_description:
-        text += '\n  {0}'.format(task.describe())
-      # log
+      if self._show_descriptions:
+        text += f'\n  {task.describe()}'
       if self._log:
         print(text, file=self._log)
-      # print
       if USE_TERM_COLOR:
         text = colored(text, 'green')
       print(text)
@@ -168,23 +184,20 @@ class VerboseObserver(Observer):
     self._finished_tasks += 1
     self._failed_tasks += 1
     if self._show_failures:
-      # format the output string
-      text = '[Failed: {0}'.format(task.name)
-      # optionally add the time
+      text = ''
+      if self._show_current_time:
+        text += f'{_now_string()} '
+      text += f'[Failed: {task.name}'
       if self._timer:
-        text += ' {0}'.format(_time_string(task_time))
+        text += f' {_time_string(task_time)}'
       text += ']'
-      # add the description
-      text += '\n  Description: {0}'.format(task.describe())
-      # append the error
+      text += f'\n  Description: {task.describe()}'
       if isinstance(errors, int):
-        text += '\n  Return: {0}'.format(str(errors))
+        text += f'\n  Return: {str(errors)}'
       else:
-        text += '\n  Message: {0}'.format(str(errors))
-      # log
+        text += f'\n  Message: {str(errors)}'
       if self._log:
         print(text, file=self._log)
-      # print
       if USE_TERM_COLOR:
         text = colored(text, 'red')
       print(text)
@@ -201,18 +214,16 @@ class VerboseObserver(Observer):
     self._finished_tasks += 1
     self._killed_tasks += 1
     if self._show_kills:
-      # format the output string
-      text = '[Killed: {0}'.format(task.name)
-      # optionally add the time
+      text = ''
+      if self._show_current_time:
+        text += f'{_now_string()} '
+      text += f'[Killed: {task.name}'
       if self._timer:
-        text += ' {0}'.format(_time_string(task_time))
+        text += f' {_time_string(task_time)}'
       text += ']'
-      # add the description
-      text += '\n  Description: {0}'.format(task.describe())
-      # log
+      text += f'\n  Description: {task.describe()}'
       if self._log:
         print(text, file=self._log)
-      # print
       if USE_TERM_COLOR:
         text = colored(text, 'red')
       print(text)
@@ -239,10 +250,12 @@ class VerboseObserver(Observer):
     """
 
     if self._show_progress:
-      text = '[Progress: {0:3.2f}% {1}/{2}'.format(
+      text = ''
+      if self._show_current_time:
+        text += f'{_now_string()} '
+      text += '[Progress: {0:3.2f}% {1}/{2}'.format(
         self._finished_tasks / self._total_tasks * 100.0,
         self._finished_tasks, self._total_tasks)
-      # optionally add the estimated time to complete
       if self._timer:
         run_time = time.time() - self._start_time
         exec_rate = (self._successful_tasks + self._failed_tasks +
@@ -251,12 +264,10 @@ class VerboseObserver(Observer):
           text += ' INFINITY'
         else:
           est_time = (self._total_tasks - self._finished_tasks) / exec_rate
-          text += ' {0}'.format(_time_string(est_time))
+          text += f' {_time_string(est_time)}'
       text += ']'
-      # log
       if self._log:
         print(text, file=self._log)
-      # print
       if USE_TERM_COLOR:
         text = colored(text, 'magenta')
       print(text)
@@ -272,39 +283,44 @@ class VerboseObserver(Observer):
         print(text, file=self._log)
       print(text)
 
-      text = '  Total      : {0}'.format(self._total_tasks)
+      if self._show_current_time:
+        text = f'  Now        : {_now_string()}'
+        if self._log:
+          print(text, file=self._log)
+        print(text)
+
+      text = f'  Total      : {self._total_tasks}'
       if self._log:
         print(text, file=self._log)
       print(text)
 
-      text = '  Time       : {0}'.format(
-        _time_string(self._end_time - self._start_time))
+      text = f'  Time       : {_time_string(self._end_time - self._start_time)}'
       if self._log:
         print(text, file=self._log)
       print(text)
 
-      text = '  Successful : {0}'.format(self._successful_tasks)
+      text = f'  Successful : {self._successful_tasks}'
       if self._log:
         print(text, file=self._log)
       if USE_TERM_COLOR:
         text = colored(text, 'green')
       print(text)
 
-      text = '  Bypassed   : {0}'.format(self._bypassed_tasks)
+      text = f'  Bypassed   : {self._bypassed_tasks}'
       if self._log:
         print(text, file=self._log)
       if USE_TERM_COLOR:
         text = colored(text, 'yellow')
       print(text)
 
-      text = '  Failed     : {0}'.format(self._failed_tasks)
+      text = f'  Failed     : {self._failed_tasks}'
       if self._log:
         print(text, file=self._log)
       if USE_TERM_COLOR:
         text = colored(text, 'red')
       print(text)
 
-      text = '  Killed     : {0}'.format(self._killed_tasks)
+      text = f'  Killed     : {self._killed_tasks}'
       if self._log:
         print(text, file=self._log)
       if USE_TERM_COLOR:
@@ -323,13 +339,14 @@ def _time_string(total_seconds):
   hours, rem = divmod(rem, 60 * 60)
   minutes, seconds = divmod(rem, 60)
   if days > 0:
-    return '{0}d:{1}h:{2}m:{3}s'.format(
-      int(days), int(hours), int(minutes), int(seconds))
+    return f'{int(days)}d:{int(hours)}h:{int(minutes)}m:{int(seconds)}s'
   if hours > 0:
-    return '{0}h:{1}m:{2}s'.format(
-      int(hours), int(minutes), int(seconds))
+    return f'{int(hours)}h:{int(minutes)}m:{int(seconds)}s'
   if minutes > 0:
-    return '{0}m:{1}s'.format(
-      int(minutes), int(seconds))
-  return '{0}s'.format(
-    int(seconds))
+    return f'{int(minutes)}m:{int(seconds)}s'
+  return f'{int(seconds)}s'
+
+
+def _now_string():
+  """This returns a formatted string for the current date and time."""
+  return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')

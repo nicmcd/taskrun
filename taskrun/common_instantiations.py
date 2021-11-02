@@ -35,7 +35,6 @@ from .counter_resource import CounterResource
 from .failure_mode import FailureMode
 from .file_cleanup_observer import FileCleanupObserver
 from .memory_resource import MemoryResource
-from .observer import Observer
 from .resource_manager import ResourceManager
 from .task_manager import TaskManager
 from .verbose_observer import VerboseObserver
@@ -60,7 +59,7 @@ def standard_task_manager(
     track_memory   (bool) - track memory resources as 'mem'
     max_memory     (num)  - maximum memory in GiB, <=0 for currently available
     default_memory (num)  - default memory per tasks in GiB
-    verbosity      (int)  - 0=off, 1=minimal, 2=full descriptions
+    verbosity      (int)  - 0=off, 1=minimal, 2=full
     cleanup_files  (bool) - remove output files of tasks on failure
     failure_mode   (FM)   - failure mode, see failure_mode.py create()
 
@@ -86,21 +85,33 @@ def standard_task_manager(
     resource_manager, verbosity, cleanup_files, failure_mode)
 
 
-def serial_task_manager(
+def basic_task_manager(
+    parallelism=1,
     verbosity=1,
     cleanup_files=True,
     failure_mode='aggressive_fail'):
-  """Creates a task manager that executes tasks one-by-one.
-    verbosity      (int)  - 0=off, 1=minimal, 2=full descriptions
+  """Creates a task manager that executes tasks with N-way parallelism.
+
+  The resource created is called 'slots'. By default each task takes 1 slot.
+
+  Args:
+    parallelism    (int)  - amount of parallelism (<=0 for num_procs)
+    verbosity      (int)  - 0=off, 1=minimal, 2=full
     cleanup_files  (bool) - remove output files of tasks on failure
     failure_mode   (FM)   - failure mode, see failure_mode.py create()
 
   Returns:
     task_manager (TaskManager)
   """
-  rm = ResourceManager(CounterResource('foo', 1, 1))
-  return __create_standard_task_manager(rm, verbosity, cleanup_files,
-                                        failure_mode)
+  resources = []
+  if parallelism <= 0:
+    slots = os.cpu_count()
+  else:
+    slots = parallelism
+  resources.append(CounterResource('slots', 1, slots))
+  resource_manager = ResourceManager(*resources)
+  return __create_standard_task_manager(
+    resource_manager, verbosity, cleanup_files, failure_mode)
 
 
 def __create_task_manager(rm, obs, fm):
@@ -111,7 +122,10 @@ def __create_standard_task_manager(rm, verbosity, cleanup_files, failure_mode):
   observers = []
   if verbosity > 0:
     full_verbosity = verbosity > 1
-    observers.append(VerboseObserver(show_description=full_verbosity))
+    observers.append(VerboseObserver(
+      show_kills=full_verbosity,
+      show_descriptions=full_verbosity,
+      show_current_time=full_verbosity))
   if cleanup_files:
     observers.append(FileCleanupObserver())
   failure_mode = FailureMode.create(failure_mode)

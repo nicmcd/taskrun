@@ -30,7 +30,7 @@
 """
 
 from .cluster_task import ClusterTask
-from .common_instantiations import serial_task_manager
+from .common_instantiations import basic_task_manager
 from .common_instantiations import standard_task_manager
 from .condition import Condition
 from .counter_resource import CounterResource
@@ -52,4 +52,4 @@ from .task import Task
 from .task_manager import TaskManager
 from .verbose_observer import VerboseObserver
 
-__version__ = '4.1.0'
+__version__ = '4.2.0'
