@@ -52,4 +52,4 @@ from .task import Task
 from .task_manager import TaskManager
 from .verbose_observer import VerboseObserver
 
-__version__ = '4.2.0'
+__version__ = '4.2.1'

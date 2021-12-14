@@ -48,6 +48,7 @@ def standard_task_manager(
     max_memory=-1,
     default_memory=999999999,
     verbosity=1,
+    log_file=None,
     cleanup_files=True,
     failure_mode='aggressive_fail'):
   """Creates a standard task manager.
@@ -60,6 +61,7 @@ def standard_task_manager(
     max_memory     (num)  - maximum memory in GiB, <=0 for currently available
     default_memory (num)  - default memory per tasks in GiB
     verbosity      (int)  - 0=off, 1=minimal, 2=full
+    log_file       (str)  - a file to write log to, None for none
     cleanup_files  (bool) - remove output files of tasks on failure
     failure_mode   (FM)   - failure mode, see failure_mode.py create()
 
@@ -82,7 +84,7 @@ def standard_task_manager(
   resource_manager = ResourceManager(*resources)
 
   return __create_standard_task_manager(
-    resource_manager, verbosity, cleanup_files, failure_mode)
+    resource_manager, verbosity, log_file, cleanup_files, failure_mode)
 
 
 def basic_task_manager(
@@ -118,15 +120,20 @@ def __create_task_manager(rm, obs, fm):
   return TaskManager(resource_manager=rm, observers=obs, failure_mode=fm)
 
 
-def __create_standard_task_manager(rm, verbosity, cleanup_files, failure_mode):
+def __create_standard_task_manager(rm, verbosity, log_file, cleanup_files,
+                                   failure_mode):
   observers = []
   if verbosity > 0:
     full_verbosity = verbosity > 1
+    log = None
+    if log_file:
+      log = open(log_file, 'w')
     observers.append(VerboseObserver(
+      log=log,
       show_kills=full_verbosity,
       show_descriptions=full_verbosity,
       show_current_time=full_verbosity))
   if cleanup_files:
     observers.append(FileCleanupObserver())
   failure_mode = FailureMode.create(failure_mode)
-  return __create_task_manager(rm, observers,failure_mode)
+  return __create_task_manager(rm, observers, failure_mode)
