@@ -113,7 +113,7 @@ def basic_task_manager(
   resources.append(CounterResource('slots', 1, slots))
   resource_manager = ResourceManager(*resources)
   return __create_standard_task_manager(
-    resource_manager, verbosity, cleanup_files, failure_mode)
+    resource_manager, verbosity, None, cleanup_files, failure_mode)
 
 
 def __create_task_manager(rm, obs, fm):
