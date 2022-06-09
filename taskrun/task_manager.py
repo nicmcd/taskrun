@@ -74,6 +74,12 @@ class TaskManager:
                               datetime.timedelta(seconds = 5))
     self._pid = os.getpid()
 
+  def add_observer(self, observer):
+    """
+    This adds an observer to the list of observers
+    """
+    self._observers.append(observer)
+
   def add_task(self, task):
     """
     This adds a task to this manager
